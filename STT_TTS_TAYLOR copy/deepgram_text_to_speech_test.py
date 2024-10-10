@@ -37,7 +37,9 @@ def text_to_speech(text):
                 print("Audio data received successfully. Playing audio...")
 
                 # Play the audio file using afplay
-                subprocess.run(["afplay", temp_file])
+                
+                #TODO: Figure out how to play Audio on Pi Zero 2W
+                #subprocess.run(["afplay", temp_file])
                 print("Playback finished.")
                 
                 # Optionally delete the temp file after playing

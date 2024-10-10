@@ -25,12 +25,12 @@ def process_text_with_gpt(transcript):
 
 def main():
     # Path to your audio file
-    audio_file_path = "/Users/taylorlevinson/Downloads/Conference.wav"
+    audio_file_path = "sample-3s.wav"
 
     if os.path.exists(audio_file_path):
         print(f"Transcribing audio file: {audio_file_path}")
-        transcript = audio_to_text(audio_file_path)
-        
+        #transcript = audio_to_text(audio_file_path)
+        transcript = "hello, have a nice day!"
         if transcript:
             print("Transcription:", transcript)
             # Process the transcribed text using GPT

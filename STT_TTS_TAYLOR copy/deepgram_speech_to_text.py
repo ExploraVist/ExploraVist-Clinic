@@ -37,7 +37,7 @@ def audio_to_text(file_path):
 
 def main():
     # Example audio file for transcription
-    audio_file_path = "/Users/taylorlevinson/Downloads/Conference.wav"  # Use .mp3 if needed
+    audio_file_path = "sample-3s.wav"  # Use .mp3 if needed
 
     if os.path.exists(audio_file_path):
         print(f"Transcribing audio file: {audio_file_path}")
