@@ -35,11 +35,19 @@ def text_to_speech(text):
             # Check if the file was saved properly
             if os.path.getsize(temp_file) > 0:
                 print("Audio data received successfully. Playing audio...")
-
-                # Play the audio file using afplay
-                
+		 # Play the audio file using afplay
+                converted_file = "converted_response.wav"
+                conversion_command = [
+                        "ffmpeg","-y",
+                        "-i", temp_file,
+                        "-ar", "44100",
+                        "-ac", "2",
+                        converted_file
+                ]
                 #TODO: Figure out how to play Audio on Pi Zero 2W
-                #subprocess.run(["afplay", temp_file])
+                subprocess.run(conversion_command)
+
+                subprocess.run(["aplay", converted_file])
                 print("Playback finished.")
                 
                 # Optionally delete the temp file after playing
