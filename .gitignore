@@ -1,0 +1,137 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environment directories
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Pip and poetry packages
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# MyPy, Pyre, and other Python type checker caches
+.mypy_cache/
+.pyre/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# pyenv
+.python-version
+
+# ENV files
+.env
+.env.*
+.secret
+
+# SQLite and other database files
+*.sqlite3
+*.db
+
+# Ignore media files (audio and video)
+*.wav
+*.mp3
+*.mp4
+*.avi
+*.mkv
+*.flv
+*.mov
+*.webm
+*.ogg
+*.flac
+*.aif
+*.aiff
+
+# Ignore media metadata files
+*.m3u
+*.cue
+*.pls
+
+# Ignore temporary files and system caches
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# Ignore package manager lockfiles
+poetry.lock
+Pipfile.lock
+
+# Ignore documentation builds
+/docs/_build/
+docs/api/
+
+# Ignore pytest cache
+.pytest_cache/
+
+# Ignore IDE/editor settings
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Ignore log and backup files
+*.log
+*.bak
+
+# Ignore images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.ico
+*.tiff
+
+# Ignore additional unnecessary files
+*.dylib
+*.dll
