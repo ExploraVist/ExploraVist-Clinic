@@ -1,6 +1,7 @@
 from deepgram_speech_to_text import audio_to_text
 from deepgram_text_to_speech_test import text_to_speech  # Import the text-to-speech function
 import os
+import base64
 from openai import OpenAI
 
 # Initialize the OpenAI client
@@ -23,12 +24,45 @@ def process_text_with_gpt(transcript):
         return response
     return None
 
+def encode_image(image_path):
+  with open(image_path, "rb") as image_file:
+    return base64.b64encode(image_file.read()).decode('utf-8')
+
+def process_image(image_path):
+# Path to your image    
+# Getting the base64 string
+    base64_image = encode_image(image_path)
+
+    response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {
+        "role": "user",
+        "content": [
+            {
+            "type": "text",
+            "text": "What is in this image?",
+            },
+            {
+            "type": "image_url",
+            "image_url": {
+                "url":  f"data:image/jpeg;base64,{base64_image}"
+            },
+            },
+        ],
+        }
+    ],
+    )
+
+    message_content = response.choices[0].message.content
+    return(message_content)
+
 def main():
     # Path to your audio file
     audio_file_path = "sample-3s.wav"
 
     if os.path.exists(audio_file_path):
-        print(f"Transcribing audio file: {audio_file_path}")
+        #print(f"Transcribing audio file: {audio_file_path}")
         #transcript = audio_to_text(audio_file_path)
         transcript = "hello, have a nice day!"
         if transcript:
@@ -40,6 +74,11 @@ def main():
                 # Convert GPT response to speech using Deepgram TTS
                 print(f"Converting GPT response to speech: {gpt_response}")
                 text_to_speech(gpt_response)
+                print(f"Processing Image:")
+                image_response = process_image("/Users/taylorlevinson/image_for_testing.jpeg")
+                print(image_response)
+                print(f"Converting image response to speech:")
+                text_to_speech(image_response)
             else:
                 print("No GPT response available.")
         else:
