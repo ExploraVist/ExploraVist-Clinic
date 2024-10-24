@@ -3,7 +3,7 @@ from deepgram_text_to_speech_test import text_to_speech  # Import the text-to-sp
 import os
 import base64
 from openai import OpenAI
-from picamzero import Camera
+from picamera2 import Picamera2
 
 # Initialize the OpenAI client
 client = OpenAI()
@@ -63,9 +63,10 @@ def process_image(image_path):
 def main():
     # Path to your audio file
     audio_file_path = "sample-3s.wav"
-    cam = Camera()
-    cam.take_photo(PHOTO_PATH)
-
+    picam2 = Picamera2()
+    picam2.start()
+    picam2.capture_file(PHOTO_PATH)
+    picam2.close()
     if os.path.exists(audio_file_path):
         #print(f"Transcribing audio file: {audio_file_path}")
         #transcript = audio_to_text(audio_file_path)
