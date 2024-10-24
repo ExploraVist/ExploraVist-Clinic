@@ -3,9 +3,12 @@ from deepgram_text_to_speech_test import text_to_speech  # Import the text-to-sp
 import os
 import base64
 from openai import OpenAI
+from picamzero import Camera
 
 # Initialize the OpenAI client
 client = OpenAI()
+
+PHOTO_PATH = "new_image.jpg"
 
 # Function to process the text with GPT and return the response
 def process_text_with_gpt(transcript):
@@ -60,6 +63,8 @@ def process_image(image_path):
 def main():
     # Path to your audio file
     audio_file_path = "sample-3s.wav"
+    cam = Camera()
+    cam.take_photo(PHOTO_PATH)
 
     if os.path.exists(audio_file_path):
         #print(f"Transcribing audio file: {audio_file_path}")
@@ -75,7 +80,7 @@ def main():
                 print(f"Converting GPT response to speech: {gpt_response}")
                 text_to_speech(gpt_response)
                 print(f"Processing Image:")
-                image_response = process_image("/Users/taylorlevinson/image_for_testing.jpeg")
+                image_response = process_image(PHOTO_PATH)
                 print(image_response)
                 print(f"Converting image response to speech:")
                 text_to_speech(image_response)
