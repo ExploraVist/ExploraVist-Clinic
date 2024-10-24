@@ -9,7 +9,7 @@ import wave
 
 
 # The API key for Deepgram
-DEEPGRAM_API_KEY = 'daf9da11d50e01f8460400c389b61d4a7bd28800'
+DEEPGRAM_API_KEY = ''
 
 ##############################################
 # function for setting up pyserial (pyaudio)
