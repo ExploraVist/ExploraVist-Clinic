@@ -1,4 +1,4 @@
-from deepgram_speech_to_text import audio_to_text
+from deepgram_speech_to_text import main
 from deepgram_text_to_speech_test import text_to_speech  # Import the text-to-speech function
 import os
 import base64
@@ -31,7 +31,7 @@ def encode_image(image_path):
   with open(image_path, "rb") as image_file:
     return base64.b64encode(image_file.read()).decode('utf-8')
 
-def process_image(image_path):
+def process_image(image_path, transcript):
 # Path to your image    
 # Getting the base64 string
     base64_image = encode_image(image_path)
@@ -44,7 +44,7 @@ def process_image(image_path):
         "content": [
             {
             "type": "text",
-            "text": "What is in this image?",
+            "text": transcript,
             },
             {
             "type": "image_url",
@@ -62,35 +62,33 @@ def process_image(image_path):
 
 def main():
     # Path to your audio file
-    audio_file_path = "sample-3s.wav"
     picam2 = Picamera2()
     picam2.start()
     picam2.capture_file(PHOTO_PATH)
     picam2.close()
-    if os.path.exists(audio_file_path):
-        #print(f"Transcribing audio file: {audio_file_path}")
-        #transcript = audio_to_text(audio_file_path)
-        transcript = "hello, have a nice day!"
-        if transcript:
-            print("Transcription:", transcript)
-            # Process the transcribed text using GPT
-            gpt_response = process_text_with_gpt(transcript)
-            
-            if gpt_response:
+    #print(f"Transcribing audio file: {audio_file_path}")
+    #transcript = audio_to_text(audio_file_path)
+    transcript = "what is shown in this image?"
+    if transcript:
+        print("Transcription:", transcript)
+        # Process the transcribed text using GPT
+        #gpt_response = process_text_with_gpt(transcript)    
+        #if gpt_response:
                 # Convert GPT response to speech using Deepgram TTS
-                print(f"Converting GPT response to speech: {gpt_response}")
-                text_to_speech(gpt_response)
-                print(f"Processing Image:")
-                image_response = process_image(PHOTO_PATH)
-                print(image_response)
-                print(f"Converting image response to speech:")
-                text_to_speech(image_response)
-            else:
-                print("No GPT response available.")
-        else:
-            print("No transcription available.")
+            #print(f"Converting GPT response to speech: {gpt_response}")
+            #text_to_speech(gpt_response)
+            #print(f"Processing Image:")
+            #image_response = process_image(PHOTO_PATH)
+            #print(image_response)
+            #print(f"Converting image response to speech:")
+            #text_to_speech(image_response)
+        #else:
+            #print("No GPT response available.")
+        image_response = process_image(PHOTO_PATH, transcript)
+        print(image_response)
+        print(f"Converting image response to speech:")
+        text_to_speech(image_response)
     else:
-        print(f"Error: Audio file {audio_file_path} does not exist.")
-
+        print("No transcription available.")
 if __name__ == '__main__':
     main()
