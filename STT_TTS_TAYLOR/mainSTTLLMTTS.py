@@ -1,4 +1,5 @@
-from deepgram_speech_to_text import main
+# from deepgram_speech_to_text import speech_to_text
+import deepgram_speech_to_text
 from deepgram_text_to_speech_test import text_to_speech  # Import the text-to-speech function
 import os
 import base64
@@ -87,7 +88,11 @@ def main():
 		    picam2.close()
 		    #print(f"Transcribing audio file: {audio_file_path}")
 		    #transcript = audio_to_text(audio_file_path)
-		    transcript = "what is shown in this image?"
+		    # transcript = "what is shown in this image?"
+		    transcript = deepgram_speech_to_text.speech_to_text()
+            # transcript = deepgram_speech_to_text.speech_to_text()
+            # transcript = ""
+            # transcript = deepgram_speech_to_text.speech_to_text()
 		    if transcript:
 		        print("Transcription:", transcript)
 		        # Process the transcribed text using GPT
