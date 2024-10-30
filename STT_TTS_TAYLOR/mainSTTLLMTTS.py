@@ -6,6 +6,14 @@ from openai import OpenAI
 from picamera2 import Picamera2
 import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
 
+# API KEYS
+import config
+
+
+# Set an environment variable
+os.environ["OPENAI_API_KEY"] = config.GPT_API_KEY
+
+
 def button_callback(channel):
 	print("Button was pushed!")
 

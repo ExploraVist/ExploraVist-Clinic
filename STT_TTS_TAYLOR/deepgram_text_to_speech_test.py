@@ -1,8 +1,9 @@
 import subprocess
 import os
+import config # Includes DEEPGRAM_API_KEY
 
 # The API key for Deepgram
-DEEPGRAM_API_KEY = ''
+DEEPGRAM_API_KEY = config.DEEPGRAM_API_KEY
 
 # Function to send text to Deepgram and play audio response
 def text_to_speech(text):
