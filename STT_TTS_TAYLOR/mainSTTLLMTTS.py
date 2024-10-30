@@ -4,7 +4,16 @@ import os
 import base64
 from openai import OpenAI
 from picamera2 import Picamera2
+import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
 
+def button_callback(channel):
+	print("Button was pushed!")
+
+GPIO.setwarnings(False) # Ignore warning for now
+GPIO.setmode(GPIO.BCM) # Use physical pin numbering
+
+GPIO.setup(22, GPIO.IN, pull_up_down=GPIO.PUD_UP) # Set pin 22 to pull up (normally closed)
+GPIO.setup(27, GPIO.IN, pull_up_down=GPIO.PUD_UP) # Set pin 27 to pull up (normally closed)
 # Initialize the OpenAI client
 client = OpenAI()
 
@@ -61,34 +70,36 @@ def process_image(image_path, transcript):
     return(message_content)
 
 def main():
-    # Path to your audio file
-    picam2 = Picamera2()
-    picam2.start()
-    picam2.capture_file(PHOTO_PATH)
-    picam2.close()
-    #print(f"Transcribing audio file: {audio_file_path}")
-    #transcript = audio_to_text(audio_file_path)
-    transcript = "what is shown in this image?"
-    if transcript:
-        print("Transcription:", transcript)
-        # Process the transcribed text using GPT
-        #gpt_response = process_text_with_gpt(transcript)    
-        #if gpt_response:
-                # Convert GPT response to speech using Deepgram TTS
-            #print(f"Converting GPT response to speech: {gpt_response}")
-            #text_to_speech(gpt_response)
-            #print(f"Processing Image:")
-            #image_response = process_image(PHOTO_PATH)
-            #print(image_response)
-            #print(f"Converting image response to speech:")
-            #text_to_speech(image_response)
-        #else:
-            #print("No GPT response available.")
-        image_response = process_image(PHOTO_PATH, transcript)
-        print(image_response)
-        print(f"Converting image response to speech:")
-        text_to_speech(image_response)
-    else:
-        print("No transcription available.")
+	while True: # Run forever
+	    if GPIO.input(22) == GPIO.LOW:
+		    # Path to your audio file
+		    picam2 = Picamera2()
+		    picam2.start()
+		    picam2.capture_file(PHOTO_PATH)
+		    picam2.close()
+		    #print(f"Transcribing audio file: {audio_file_path}")
+		    #transcript = audio_to_text(audio_file_path)
+		    transcript = "what is shown in this image?"
+		    if transcript:
+		        print("Transcription:", transcript)
+		        # Process the transcribed text using GPT
+		        #gpt_response = process_text_with_gpt(transcript)    
+		        #if gpt_response:
+		                # Convert GPT response to speech using Deepgram TTS
+		            #print(f"Converting GPT response to speech: {gpt_response}")
+		            #text_to_speech(gpt_response)
+		            #print(f"Processing Image:")
+		            #image_response = process_image(PHOTO_PATH)
+		            #print(image_response)
+		            #print(f"Converting image response to speech:")
+		            #text_to_speech(image_response)
+		        #else:
+		            #print("No GPT response available.")
+		        image_response = process_image(PHOTO_PATH, transcript)
+		        print(image_response)
+		        print(f"Converting image response to speech:")
+		        text_to_speech(image_response)
+		    else:
+		        print("No transcription available.")
 if __name__ == '__main__':
     main()
