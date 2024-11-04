@@ -144,7 +144,7 @@ def main():
 		    #print(f"Transcribing audio file: {audio_file_path}")
 		    #transcript = audio_to_text(audio_file_path)
 		    # transcript = "what is shown in this image?"
-		    transcript = audio_to_text(output.wav)
+		    transcript = audio_to_text(WAVE_OUTPUT_FILENAME)
             # transcript = deepgram_speech_to_text.speech_to_text()
             # transcript = ""
             # transcript = deepgram_speech_to_text.speech_to_text()
