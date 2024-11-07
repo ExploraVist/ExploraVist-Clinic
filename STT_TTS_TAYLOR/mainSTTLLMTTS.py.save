@@ -143,11 +143,12 @@ def processAudio():
         audio_data = np.frombuffer(frames, dtype=np.int16)
         audio_data = (audio_data * 4).clip(-32768, 32767).astype(np.int16)  # Adjust multiplier for gain
         wav_out.writeframes(audio_data.tobytes())
+
+
 def main():
 	while True: # Run forever
 		if GPIO.input(22) == GPIO.LOW:
 			processAudio()
-			transcript = audio_to_text(WAVE_OUTPUT_FILENAME)
 			picam2 = Picamera2()
 			picam2.start()
 			picam2.capture_file(PHOTO_PATH)
@@ -155,6 +156,7 @@ def main():
 		    #print(f"Transcribing audio file: {audio_file_path}")
 		    #transcript = audio_to_text(audio_file_path)
 		    # transcript = "what is shown in this image?"
+			transcript = audio_to_text(WAVE_OUTPUT_FILENAME)
             # transcript = deepgram_speech_to_text.speech_to_text()
             # transcript = ""
             # transcript = deepgram_speech_to_text.speech_to_text()
