@@ -116,8 +116,8 @@ def processAudio():
     frames = []
 
     for _ in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
-    data = stream.read(CHUNK)
-    frames.append(data)
+        data = stream.read(CHUNK)
+        frames.append(data)
 
     print("Recording complete")
 
