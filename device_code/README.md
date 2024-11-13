@@ -7,6 +7,7 @@ config = {
 
 ## Folder Structure:
 
+```
 project_root/
 │
 ├── main.py               # The main entry point for your application
@@ -25,4 +26,4 @@ project_root/
 │   └── captured_image.jpg
 │
 └── requirements.txt      # Dependencies for the project
-
+```
