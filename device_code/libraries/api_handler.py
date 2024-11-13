@@ -17,7 +17,7 @@ class APIHandler:
         os.environ["OPENAI_API_KEY"] = config["GPT_API_KEY"]
 
 
-    def audio_to_text(self, file_path):
+    def audio_to_text(self, file_path="/audio/audio.wav"):
         """
         Transcribes audio to text using Deepgram's API.
         
