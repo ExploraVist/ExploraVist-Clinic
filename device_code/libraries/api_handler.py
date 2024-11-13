@@ -10,6 +10,13 @@ def encode_image(image_path):
         return base64.b64encode(image_file.read()).decode('utf-8')
 
 class APIHandler:
+    #TODO incorporate a requests.Session() for Keep-Alive, Ex:
+    # self.session = requests.Session()  # Use a session for keep-alive
+    #   self.session.headers.update({
+    #       "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
+    #       "Content-Type": "audio/wav"  # Set content type for the session
+    #   })
+    # self.url = "https://api.deepgram.com/v1/listen"
     
     def __init__(self, config):
         self.DEEPGRAM_API_KEY = config["DEEPGRAM_API_KEY"]
