@@ -1,6 +1,6 @@
 from libraries.media_device_manager import MediaDeviceManager
 from libraries.api_handler import APIHandler
-from libraries.config_checker import ConfigurationChecker
+from libraries.sys_config import SystemConfig
 import RPi.GPIO as GPIO  # Import Raspberry Pi GPIO library
 import config
 import time
@@ -10,8 +10,8 @@ default_prompt = "Describe what you see in front of you."
 
 def main():
     # Initialize classes
-    config_checker = ConfigurationChecker()
-    if not config_checker.check_system_ready():
+    sys_config = SystemConfig()
+    if not sys_config.check_system_ready():
         print("System not ready. Exiting.")
         return
 

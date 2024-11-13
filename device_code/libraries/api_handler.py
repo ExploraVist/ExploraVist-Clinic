@@ -3,6 +3,7 @@ from openai import OpenAI
 import base64
 import requests
 import subprocess
+from metrics import timed
 
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
@@ -16,7 +17,7 @@ class APIHandler:
         # Set an environment variable
         os.environ["OPENAI_API_KEY"] = config["GPT_API_KEY"]
 
-
+    @timed
     def audio_to_text(self, file_path="/audio/audio.wav"):
         """
         Transcribes audio to text using Deepgram's API.
@@ -56,7 +57,8 @@ class APIHandler:
             else:
                 print(f"Error: {response.status_code} - {response.text}")
                 return None
-        
+    
+    @timed
     def gpt_request(self, transcript):
         """
         Performs GPT API Request with a custom prompt returning text response
@@ -82,6 +84,7 @@ class APIHandler:
             return response
         return None
     
+    @timed
     def gpt_image_request(self, transcript, photo_path="/images/temp_image.jpg"):
         """
         Sends an image and a text prompt to the GPT API and returns the text response.
@@ -121,6 +124,7 @@ class APIHandler:
         message_content = response.choices[0].message.content
         return(message_content)
 
+    @timed
     def text_to_speech(self, text):
         """
         Converts text to speech using the Deepgram TTS API and plays the audio.
