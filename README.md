@@ -1,6 +1,6 @@
 ## Folder Structure
 
-Root Directory: The main folder of your project with an overarching name, e.g., pi-zero2w-project.
+Root Directory: 
 
 src/: The source code for your program. This is where you place all your main code, organized by functionality (e.g., camera/, gpio/, audio/, api/).
 
