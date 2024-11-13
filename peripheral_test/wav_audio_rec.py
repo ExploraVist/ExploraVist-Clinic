@@ -1,6 +1,6 @@
 import pyaudio
 import wave
-
+import numpy as np
 # Define parameters for audio recording
 CHUNK = 44100  # buffer size
 FORMAT = pyaudio.paInt16  # 16-bit audio
@@ -44,3 +44,10 @@ wf.writeframes(b''.join(frames))
 wf.close()
 
 print(f"File saved as {WAVE_OUTPUT_FILENAME}")
+with wave.open("output.wav", "rb") as wav_in, wave.open("output_louder.wav", "wb") as wav_out:
+    params = wav_in.getparams()
+    wav_out.setparams(params)
+    frames = wav_in.readframes(params.nframes)
+    audio_data = np.frombuffer(frames, dtype=np.int16)
+    audio_data = (audio_data * 4).clip(-32768, 32767).astype(np.int16)  # Adjust multiplier for gain
+    wav_out.writeframes(audio_data.tobytes())

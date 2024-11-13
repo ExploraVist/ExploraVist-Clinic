@@ -1,9 +1,19 @@
 import subprocess
 import os
 import config # Includes DEEPGRAM_API_KEY
+import RPi.GPIO as GPIO
 
 # The API key for Deepgram
 DEEPGRAM_API_KEY = config.DEEPGRAM_API_KEY
+
+
+GPIO.setwarnings(False)  # Ignore warning for now
+GPIO.setmode(GPIO.BCM)  # Use physical pin numbering
+
+# Set pin 22 to pull up (normally closed)
+GPIO.setup(22, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+# Set pin 27 to pull up (normally closed)
+GPIO.setup(27, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 # Function to send text to Deepgram and play audio response
 def text_to_speech(text):
@@ -68,9 +78,10 @@ def main():
         "Hello, this is a test of Deepgram's text-to-speech functionality."
     ]
 
-    for text in test_strings:
-        print(f"Converting text: {text}")
-        text_to_speech(text)
+    while True:  # Run forever
+        if GPIO.input(22) == GPIO.LOW:
+            text_to_speech(text)
 
 if __name__ == '__main__':
     main()
+
