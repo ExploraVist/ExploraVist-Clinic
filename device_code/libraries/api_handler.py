@@ -26,6 +26,83 @@ class APIHandler:
         os.environ["OPENAI_API_KEY"] = config["GPT_API_KEY"]
         self.client = OpenAI()
         self.canceled = 0
+        self.session = requests.Session()
+        self.session.headers.update({
+            "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
+            "Content-Type": "text/plain"
+        })
+
+    def text_to_speech(self, text):
+        """
+        Converts text to speech using the Deepgram TTS API and plays the audio.
+
+        Parameters:
+            text (str): Text to be converted to speech.
+
+        Returns:
+            None
+        """
+        temp_time = time.time()
+        start_time = time.time()
+        url = "https://api.deepgram.com/v1/speak"
+
+        try:
+            # Send the request to Deepgram's TTS API
+            response = self.session.post(url, data=text)
+            response.raise_for_status()  # Ensure no HTTP errors
+
+            print(f"API Request Time: {time.time() - temp_time:.2f} seconds")
+            temp_time = time.time()
+
+            # Save the response audio to a file
+            temp_file = "audio/audio.wav"
+            with open(temp_file, "wb") as audio_file:
+                audio_file.write(response.content)
+
+            print(f"File Save Time: {time.time() - temp_time:.2f} seconds")
+            temp_time = time.time()
+
+            # Convert the file to a standard WAV format with ffmpeg if needed
+            converted_file = "audio/converted_response.wav"
+            conversion_command = [
+                "ffmpeg", "-y", "-i", temp_file, "-ar", "44100", "-ac", "1", converted_file
+            ]
+            subprocess.run(conversion_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            print(f"Audio Conversion Time: {time.time() - temp_time:.2f} seconds")
+            temp_time = time.time()
+
+            # Play the converted file
+            if os.path.exists(converted_file):
+                print("Audio data received successfully. Playing audio...")
+                audio_process = subprocess.Popen(["aplay", converted_file])
+
+                print(f"Total Time Until Audio: {time.time() - start_time} seconds")
+
+                # Monitor GPIO 22 to cancel playback
+                while audio_process.poll() is None:
+                    if GPIO.input(22) == GPIO.LOW:  # Button is pressed
+                        print("Button pressed, stopping audio playback.")
+                        audio_process.terminate()
+                        self.canceled = 1
+                        break
+                    time.sleep(0.1)  # Check every 100ms
+                audio_process.wait()  # Wait for the process to finish
+
+                print(f"Playback Time: {time.time() - temp_time:.2f} seconds")
+                print("Playback finished.")
+
+                # Clean up temporary files
+                os.remove(temp_file)
+                os.remove(converted_file)
+            else:
+                print("Error: Converted audio file not saved correctly.")
+
+            # Print the total time taken for the text-to-speech process
+            print(f"Total Text-to-Speech Time: {time.time() - start_time:.2f} seconds")
+
+        except requests.exceptions.RequestException as e:
+            print(f"Error during request: {e}")
 
     @timed
     def audio_to_text(self, file_path="audio/audio.wav"):
@@ -135,7 +212,7 @@ class APIHandler:
         return(message_content)
 
     #@timed
-    def text_to_speech(self, text):
+    def temp_text_to_speech(self, text):
         start_time = time.time()
         # Convert text to audio as you have done until now
         # The URL for Deepgram TTS

@@ -40,21 +40,26 @@ def main():
         device.stop_recording()
         time_pressed = time.time() - start_time
 
-        if time_pressed <= 1.5 and time_pressed > 0.1: # Image Description Using Default Prompt
+        if time_pressed <= 1.5 and time_pressed >= 0.1: # Image Description Using Default Prompt
             # Take image
-            device.capture_image() 
+            device.capture_image()
+
             # Make LLM API Call
             text_response = api_handler.gpt_image_request(default_prompt)
+
             # Convert LLM Response to Audio
             api_handler.text_to_speech(text_response)
-        
+
         elif time_pressed > 1.5:
             # Take image
             device.capture_image()
+
             # Speech to Text
             transcript = api_handler.audio_to_text()
+
             # Make LLM API Call with Custom Prompt
             text_response = api_handler.gpt_image_request(transcript)
+
             # Convert LLM Response to Audio
             api_handler.text_to_speech(text_response)
         else:
