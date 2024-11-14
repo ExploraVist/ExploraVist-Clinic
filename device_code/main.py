@@ -6,8 +6,6 @@ from libraries.config import config
 import libraries.config
 import time
 
-restart = 0 #TODO implement an exit/restart mechanism
-default_prompt = "Describe what you see in front of you."
 
 def main():
     # Initialize classes
@@ -25,6 +23,10 @@ def main():
     GPIO.setup(22, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     # Set pin 27 to pul up (normally closed)
     GPIO.setup(27, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+    restart = 0 #TODO implement an exit/restart mechanism
+    default_prompt = "Describe what you see in front of you"
+    context_window = "Context: \n"
 
     while(not restart):
         # In case of an interrupt, give some room so you don't immediately take another picture
@@ -49,10 +51,10 @@ def main():
             if button_pressed == 2:
                 # Take image
                 device.capture_image()
-
+                temp_prompt = context_window + f"Current Question: {default_prompt} \n"
                 # Make LLM API Call
-                text_response = api_handler.gpt_image_request(default_prompt)
-
+                text_response = api_handler.gpt_image_request(temp_prompt)
+                context_window += f"USER: {default_prompt} \n GPT: {text_response} \n"
                 # Convert LLM Response to Audio
                 api_handler.text_to_speech(text_response)
 
@@ -63,18 +65,23 @@ def main():
 
                 # Speech to Text
                 transcript = api_handler.audio_to_text()
+                temp_prompt = context_window + f"Current Question: {transcript} \n"
 
                 # Make LLM API Call with Custom Prompt
-                text_response = api_handler.gpt_image_request(transcript)
+                text_response = api_handler.gpt_image_request(temp_prompt)
+                context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
                 # Convert LLM Response to Audio
                 api_handler.text_to_speech(text_response)
+
             elif button_pressed == 1: # Custom Prompt Only
                 # Speech to Text
                 transcript = api_handler.audio_to_text()
+                temp_prompt = context_window + f"Current Question: {transcript} \n"
 
                 # Make LLM API Call with Custom Prompt
-                text_response = api_handler.gpt_request(transcript)
+                text_response = api_handler.gpt_request(temp_prompt)
+                context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
                 # Convert LLM Response to Audio
                 api_handler.text_to_speech(text_response)
