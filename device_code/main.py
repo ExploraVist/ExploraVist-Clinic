@@ -31,43 +31,56 @@ def main():
         if api_handler.canceled == 1:
             time.sleep(1)
         api_handler.canceled = 0
+        button_pressed = 0
 
         start_time = time.time()
-        while GPIO.input(22) == GPIO.LOW:
+        while GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:
             device.start_recording()
-
+            if GPIO.input(22) == GPIO.LOW:
+                button_pressed = 2
+            elif GPIO.input(27) == GPIO.LOW:
+                button_pressed = 1
 
         device.stop_recording()
         time_pressed = time.time() - start_time
 
-        if time_pressed <= 1.5 and time_pressed >= 0.1: # Image Description Using Default Prompt
-            # Take image
-            device.capture_image()
+        if time_pressed <= 1.6 and time_pressed >= 0.1: # Image Description Using Default Prompt
+            # Image Response
+            if button_pressed == 2:
+                # Take image
+                device.capture_image()
 
-            # Make LLM API Call
-            text_response = api_handler.gpt_image_request(default_prompt)
+                # Make LLM API Call
+                text_response = api_handler.gpt_image_request(default_prompt)
 
-            # Convert LLM Response to Audio
-            api_handler.text_to_speech(text_response)
+                # Convert LLM Response to Audio
+                api_handler.text_to_speech(text_response)
 
         elif time_pressed > 1.5:
-            # Take image
-            device.capture_image()
+            if button_pressed == 2:   # Image with Custom Prompt
+                # Take image
+                device.capture_image()
 
-            # Speech to Text
-            transcript = api_handler.audio_to_text()
+                # Speech to Text
+                transcript = api_handler.audio_to_text()
 
-            # Make LLM API Call with Custom Prompt
-            text_response = api_handler.gpt_image_request(transcript)
+                # Make LLM API Call with Custom Prompt
+                text_response = api_handler.gpt_image_request(transcript)
 
-            # Convert LLM Response to Audio
-            api_handler.text_to_speech(text_response)
-        else:
-            continue
-            #print("waiting for input")
+                # Convert LLM Response to Audio
+                api_handler.text_to_speech(text_response)
+            elif button_pressed == 1: # Custom Prompt Only
+                # Speech to Text
+                transcript = api_handler.audio_to_text()
 
-        
+                # Make LLM API Call with Custom Prompt
+                text_response = api_handler.gpt_request(transcript)
 
+                # Convert LLM Response to Audio
+                api_handler.text_to_speech(text_response)
+            else:
+                continue
+                #print("waiting for input")
 
     # Clean up resources
     device.close()
