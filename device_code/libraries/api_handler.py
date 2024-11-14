@@ -48,7 +48,7 @@ class APIHandler:
 
         try:
             # Send the request to Deepgram's TTS API
-            response = self.session.post(url, data=text)
+            response = self.session.post(url, data=text.encode('utf-8')) # Encode to UTF-8 as Deepgram only accepts UTF-8
             response.raise_for_status()  # Ensure no HTTP errors
 
             print(f"API Request Time: {time.time() - temp_time:.2f} seconds")
@@ -81,7 +81,7 @@ class APIHandler:
 
                 # Monitor GPIO 22 to cancel playback
                 while audio_process.poll() is None:
-                    if GPIO.input(22) == GPIO.LOW:  # Button is pressed
+                    if GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:  # Button is pressed
                         print("Button pressed, stopping audio playback.")
                         audio_process.terminate()
                         self.canceled = 1
@@ -137,6 +137,7 @@ class APIHandler:
                 if "results" in result and result["results"]["channels"][0]["alternatives"]:
                     # Extract the transcript
                     transcript = result["results"]["channels"][0]["alternatives"][0]["transcript"]
+                    print(f"Speech to Text: {transcript}")
                     return transcript
                 else:
                     print("Error: No transcription found in the response.")
@@ -167,7 +168,7 @@ class APIHandler:
 
             # Extract the GPT response content
             response = completion.choices[0].message.content
-            print("GPT-4 Response:", response)
+            print("GPT-4o-mini Response: ", response)
             return response
         return None
     
@@ -209,6 +210,7 @@ class APIHandler:
         )
 
         message_content = response.choices[0].message.content
+        print(f"GPT-4o-mini Response: {message_content}")
         return(message_content)
 
     #@timed
