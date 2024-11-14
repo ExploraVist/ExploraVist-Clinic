@@ -27,6 +27,11 @@ def main():
     GPIO.setup(27, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
     while(not restart):
+        # In case of an interrupt, give some room so you don't immediately take another picture
+        if api_handler.canceled == 1:
+            time.sleep(1)
+        api_handler.canceled = 0
+
         start_time = time.time()
         while GPIO.input(22) == GPIO.LOW:
             device.start_recording()

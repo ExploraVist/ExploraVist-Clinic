@@ -3,7 +3,9 @@ from openai import OpenAI
 import base64
 import requests
 import subprocess
-#from metrics import timed
+import RPi.GPIO as GPIO
+import time
+from libraries.metrics import timed
 
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
@@ -23,8 +25,9 @@ class APIHandler:
         # Set an environment variable
         os.environ["OPENAI_API_KEY"] = config["GPT_API_KEY"]
         self.client = OpenAI()
+        self.canceled = 0
 
- #   @timed
+    @timed
     def audio_to_text(self, file_path="audio/audio.wav"):
         """
         Transcribes audio to text using Deepgram's API.
@@ -65,7 +68,7 @@ class APIHandler:
                 print(f"Error: {response.status_code} - {response.text}")
                 return None
     
-  #  @timed
+    @timed
     def gpt_request(self, transcript):
         """
         Performs GPT API Request with a custom prompt returning text response
@@ -91,7 +94,7 @@ class APIHandler:
             return response
         return None
     
-   # @timed
+    @timed
     def gpt_image_request(self, transcript, photo_path="images/temp_image.jpg"):
         """
         Sends an image and a text prompt to the GPT API and returns the text response.
@@ -133,16 +136,8 @@ class APIHandler:
 
     #@timed
     def text_to_speech(self, text):
-        """
-        Converts text to speech using the Deepgram TTS API and plays the audio.
-
-        Parameters:
-            text (str): Text to be converted to speech.
-
-        Returns:
-            None
-        """
-
+        start_time = time.time()
+        # Convert text to audio as you have done until now
         # The URL for Deepgram TTS
         url = "https://api.deepgram.com/v1/speak"
 
@@ -157,43 +152,51 @@ class APIHandler:
             "-H", "Content-Type: text/plain",  # Set Content-Type to text/plain
             "--data", payload  # Use --data for plain text
         ]
-        
-        # Run the curl command and capture the binary response
+    
         try:
             # Run the curl command and capture binary data without decoding
             result = subprocess.run(curl_command, capture_output=True)
-            
+        
             if result.returncode == 0:
-                # Save the response to a temporary file for playback
                 temp_file = "audio/audio.wav"
                 with open(temp_file, "wb") as audio_file:
                     audio_file.write(result.stdout)
 
-                # Check if the file was saved properly
                 if os.path.getsize(temp_file) > 0:
                     print("Audio data received successfully. Playing audio...")
-            # Play the audio file using afplay
+
                     converted_file = "converted_response.wav"
                     conversion_command = [
-                            "ffmpeg","-y",
-                            "-i", temp_file,
-                            "-ar", "44100",
-                            "-ac", "2",
-                            converted_file
+                        "ffmpeg", "-y",
+                        "-i", temp_file,
+                        "-ar", "44100",
+                        "-ac", "2",
+                        converted_file
                     ]
-                    #TODO: Figure out how to play Audio on Pi Zero 2W
                     subprocess.run(conversion_command)
 
-                    subprocess.run(["aplay", converted_file])
+                    # Start playing audio with aplay and check GPIO 22 to stop it
+                    audio_process = subprocess.Popen(["aplay", converted_file])
+                    print(f"Speech to Text: {time.time() - start_time}")
+                    # Continuously check GPIO 22 while playing audio
+                    while audio_process.poll() is None:
+                        if GPIO.input(22) == GPIO.LOW:  # Button is pressed
+                            print("Button pressed, stopping audio playback.")
+                            audio_process.terminate()
+                            self.canceled = 1
+                            break
+                        time.sleep(0.1)  # Check every 100ms
+
+                    audio_process.wait()  # Wait for the process to finish or be terminated
                     print("Playback finished.")
-                    
-                    # Optionally delete the temp file after playing
+
                     if os.path.exists(temp_file):
                         os.remove(temp_file)
+
                 else:
                     print("Error: The audio file is empty or not saved correctly.")
             else:
                 print(f"Error: {result.stderr.decode('utf-8', errors='ignore')}")
-                
+            
         except Exception as e:
             print(f"Error running curl command: {e}")
