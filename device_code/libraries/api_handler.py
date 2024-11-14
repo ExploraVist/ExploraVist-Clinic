@@ -279,3 +279,13 @@ class APIHandler:
             
         except Exception as e:
             print(f"Error running curl command: {e}")
+    
+    class MemoryManager:
+        def __init__(self):
+            # Current context window
+            # Selected list of 
+            self.context_window = ""
+        
+        def top_k_embedding(self, curr_embedding):
+            return 0
+
