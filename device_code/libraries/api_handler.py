@@ -3,7 +3,7 @@ from openai import OpenAI
 import base64
 import requests
 import subprocess
-from metrics import timed
+#from metrics import timed
 
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
@@ -20,12 +20,12 @@ class APIHandler:
     
     def __init__(self, config):
         self.DEEPGRAM_API_KEY = config["DEEPGRAM_API_KEY"]
-
         # Set an environment variable
         os.environ["OPENAI_API_KEY"] = config["GPT_API_KEY"]
+        self.client = OpenAI()
 
-    @timed
-    def audio_to_text(self, file_path="/audio/audio.wav"):
+ #   @timed
+    def audio_to_text(self, file_path="audio/audio.wav"):
         """
         Transcribes audio to text using Deepgram's API.
         
@@ -37,7 +37,7 @@ class APIHandler:
         """
 
         url = "https://api.deepgram.com/v1/listen"
-
+        print(self.DEEPGRAM_API_KEY)
         # Open the audio file in binary mode
         with open(file_path, "rb") as audio_file:
             # Send the file for transcription
@@ -65,7 +65,7 @@ class APIHandler:
                 print(f"Error: {response.status_code} - {response.text}")
                 return None
     
-    @timed
+  #  @timed
     def gpt_request(self, transcript):
         """
         Performs GPT API Request with a custom prompt returning text response
@@ -78,7 +78,7 @@ class APIHandler:
         """
         if transcript:
             # Send the transcript to OpenAI GPT model
-            completion = client.chat.completions.create(
+            completion = self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
                     {"role": "user", "content": transcript}
@@ -91,8 +91,8 @@ class APIHandler:
             return response
         return None
     
-    @timed
-    def gpt_image_request(self, transcript, photo_path="/images/temp_image.jpg"):
+   # @timed
+    def gpt_image_request(self, transcript, photo_path="images/temp_image.jpg"):
         """
         Sends an image and a text prompt to the GPT API and returns the text response.
 
@@ -107,7 +107,7 @@ class APIHandler:
         # Getting the base64 string
         base64_image = encode_image(photo_path)
 
-        response = client.chat.completions.create(
+        response = self.client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {
@@ -131,7 +131,7 @@ class APIHandler:
         message_content = response.choices[0].message.content
         return(message_content)
 
-    @timed
+    #@timed
     def text_to_speech(self, text):
         """
         Converts text to speech using the Deepgram TTS API and plays the audio.
@@ -165,7 +165,7 @@ class APIHandler:
             
             if result.returncode == 0:
                 # Save the response to a temporary file for playback
-                temp_file = "/audio/audio.wav"
+                temp_file = "audio/audio.wav"
                 with open(temp_file, "wb") as audio_file:
                     audio_file.write(result.stdout)
 

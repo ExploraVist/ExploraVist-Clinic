@@ -4,7 +4,8 @@ import wave
 import time
 import numpy as np
 from picamera2 import Picamera2
-from metrics import timed
+#import metrics
+#from metrics import timed
 
 class MediaDeviceManager:
     def __init__(self):
@@ -51,9 +52,9 @@ class MediaDeviceManager:
         
         print(f"Amplified audio saved as {output_filename}")
 
-    def start_recording(self, output_filename="/audio/audio.wav"):
+    def start_recording(self, output_filename="audio/audio.wav"):
         # Ensure only one recording thread is running at a time
-        temp_filename = "/audio/temp_audio.wav"
+        temp_filename = "audio/temp_audio.wav"
         if self.is_recording:
             print("Already recording!")
             return
@@ -99,8 +100,8 @@ class MediaDeviceManager:
         if self.audio_thread:
             self.audio_thread.join()  # Ensure the recording thread completes
 
-    @timed
-    def capture_image(self, filename="/images/temp_image.jpg"):
+ #   @metrics.timed
+    def capture_image(self, filename="images/temp_image.jpg"):
         
         # Capture an image with the Picamera2
         self.camera.capture_file(filename)

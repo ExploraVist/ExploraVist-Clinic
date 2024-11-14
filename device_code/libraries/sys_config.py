@@ -1,5 +1,5 @@
 # Class will check system configuration files on the Pi Zero 2W
-class SystemConfig(self):
+class SystemConfig:
     def __init__(self):
         self.system_read = True
 
