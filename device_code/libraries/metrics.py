@@ -4,6 +4,11 @@ from datetime import datetime
 
 import time
 
+# Next steps:
+# - Continuosly update a .csv on Drive
+# - Pair each request with an uploaded image, link in spreadsheet. 
+#   - separate folder, same name by date ID
+
 class Metrics:
     def __init__(self):
         self.steps = []
