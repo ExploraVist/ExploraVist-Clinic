@@ -20,7 +20,7 @@ class APIHandler:
     #   })
     # self.url = "https://api.deepgram.com/v1/listen"
 
-	def __init__(self, config):
+	def __init__(self, config, metrics):
 		self.DEEPGRAM_API_KEY = config["DEEPGRAM_API_KEY"]
         # Set an environment variable
 		os.environ["OPENAI_API_KEY"] = config["GPT_API_KEY"]
@@ -31,121 +31,87 @@ class APIHandler:
 			"Authorization": f"Token {self.DEEPGRAM_API_KEY}",
 			"Content-Type": "text/plain"
 		})
+        self.metrics = metrics
+        self.model = "gpt-4o-mini"
 
-	def text_to_speech(self, text):
-		"""
-		Converts text to speech using the Deepgram TTS API and plays the audio.
+	def text_to_speech(self, text, metrics):
+    """
+    Converts text to speech using the Deepgram TTS API and plays the audio, while tracking metrics.
 
-		Parameters:
-			text (str): Text to be converted to speech.
-			Returns:
-			None
-		"""
-		temp_time = time.time()
-		start_time = time.time()
-		url = "https://api.deepgram.com/v1/speak"
+    Parameters:
+        text (str): Text to be converted to speech.
+        metrics (Metrics): Metrics object for tracking timings.
 
-		try:
-            # Send the request to Deepgram's TTS API
-			response = self.session.post(url, data=text.encode('utf-8')) # Encode to UTF-8 as Deepgram only accepts UTF-8
-			response.raise_for_status()  # Ensure no HTTP errors
+    Returns:
+        None
+    """
+    url = "https://api.deepgram.com/v1/speak"
+    metrics.start()  # Start tracking the total time for this request
 
-			print(f"API Request Time: {time.time() - temp_time:.2f} seconds")
-			temp_time = time.time()
+    try:
+        # 1. Send the request to Deepgram's TTS API
+        step_start = time.time()
+        response = self.session.post(url, data=text.encode('utf-8'))  # Encode to UTF-8
+        response.raise_for_status()  # Ensure no HTTP errors
+        metrics.add_step("TTS API Request", time.time() - step_start)
 
-            # Save the response audio to a file
-			temp_file = "audio/audio.wav"
-			with open(temp_file, "wb") as audio_file:
-				audio_file.write(response.content)
+        # 2. Save the response audio to a temporary file
+        step_start = time.time()
+        temp_file = "audio/audio.wav"
+        with open(temp_file, "wb") as audio_file:
+            audio_file.write(response.content)
+        metrics.add_step("Save Audio File", time.time() - step_start)
 
-			print(f"File Save Time: {time.time() - temp_time:.2f} seconds")
-			temp_time = time.time()
+        # 3. Convert the file to a standard WAV format (if needed)
+        step_start = time.time()
+        converted_file = "audio/converted_response.wav"
+        conversion_command = [
+            "ffmpeg", "-y", "-i", temp_file, "-ar", "44100", "-ac", "1", converted_file
+        ]
+        subprocess.run(conversion_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        metrics.add_step("Convert Audio", time.time() - step_start)
 
-            # Convert the file to a standard WAV format with ffmpeg if needed
-			converted_file = "audio/converted_response.wav"
-			conversion_command = [
-				"ffmpeg", "-y", "-i", temp_file, "-ar", "44100", "-ac", "1", converted_file
-			]
-			subprocess.run(conversion_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # 4. Play the converted file
+        if os.path.exists(converted_file):
+            step_start = time.time()
+            print("Audio data received successfully. Playing audio...")
+            audio_process = subprocess.Popen(["aplay", converted_file])
 
-			print(f"Audio Conversion Time: {time.time() - temp_time:.2f} seconds")
-			temp_time = time.time()
+            # Monitor GPIO to allow user to cancel playback
+            while audio_process.poll() is None:
+                if GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:  # Button pressed
+                    print("Button pressed, stopping audio playback.")
+                    audio_process.terminate()
+                    self.canceled = 1
+                    break
+                time.sleep(0.1)  # Check every 100ms
 
-            # Play the converted file
-			if os.path.exists(converted_file):
-				print("Audio data received successfully. Playing audio...")
-				audio_process = subprocess.Popen(["aplay", converted_file])
+            audio_process.wait()  # Wait for playback to complete
+            metrics.add_step("Audio Playback", time.time() - step_start)
 
-				print(f"Total Time Until Audio: {time.time() - start_time} seconds")
+            # Clean up temporary files
+            os.remove(temp_file)
+            os.remove(converted_file)
+        else:
+            print("Error: Converted audio file not saved correctly.")
+            metrics.add_step("Error Handling", 0)
 
-                # Monitor GPIO 22 to cancel playback
-				while audio_process.poll() is None:
-					if GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:  # Button is pressed
-						print("Button pressed, stopping audio playback.")
-						audio_process.terminate()
-						self.canceled = 1
-						break
-					time.sleep(0.1)  # Check every 100ms
-				audio_process.wait()  # Wait for the process to finish
+    except requests.exceptions.RequestException as e:
+        print(f"Error during TTS API request: {e}")
+        metrics.add_step("TTS API Error", 0)
+    except FileNotFoundError as e:
+        print(f"Error: Required file not found - {e}")
+        metrics.add_step("File Error", 0)
+    except Exception as e:
+        print(f"Unexpected error during text-to-speech process: {e}")
+        metrics.add_step("Unexpected Error", 0)
 
-				print(f"Playback Time: {time.time() - temp_time:.2f} seconds")
-				print("Playback finished.")
+    # Print total time for the TTS process
+    total_time = metrics.get_total_time()
+    print(f"Total Text-to-Speech Time: {total_time:.2f} seconds")
 
-                # Clean up temporary files
-				os.remove(temp_file)
-				os.remove(converted_file)
-			else:
-				print("Error: Converted audio file not saved correctly.")
 
-            # Print the total time taken for the text-to-speech process
-			print(f"Total Text-to-Speech Time: {time.time() - start_time:.2f} seconds")
-
-		except requests.exceptions.RequestException as e:
-			print(f"Error during request: {e}")
-
-	@timed
-	def audio_to_text(self, file_path="audio/audio.wav"):
-		"""
-			Transcribes audio to text using Deepgram's API.
-
-			Parameters:
-			file_path (str): Path to the audio file.
-
-			Returns:
-			str: The transcribed text if successful, None otherwise.
-		"""
-
-		url = "https://api.deepgram.com/v1/listen"
-		print(self.DEEPGRAM_API_KEY)
-        # Open the audio file in binary mode
-		with open(file_path, "rb") as audio_file:
-            # Send the file for transcription
-			response = requests.post(
-				url,
-				headers={
-				"Authorization": f"Token {self.DEEPGRAM_API_KEY}",
-				"Content-Type": "audio/wav"  # Use "audio/mp3" for MP3 files
-				},
-				data=audio_file
-			)
-
-            # Check if the request was successful
-			if response.status_code == 200:
-                # Parse the JSON response
-				result = response.json()
-				if "results" in result and result["results"]["channels"][0]["alternatives"]:
-                    # Extract the transcript
-					transcript = result["results"]["channels"][0]["alternatives"][0]["transcript"]
-					print(f"Speech to Text: {transcript}")
-					return transcript
-				else:
-					print("Error: No transcription found in the response.")
-					return None
-			else:
-				print(f"Error: {response.status_code} - {response.text}")
-				return None
-
-	@timed
+	@timed(metrics)
 	def gpt_request(self, transcript):
 		"""
 			Performs GPT API Request with a custom prompt returning text response
@@ -159,7 +125,7 @@ class APIHandler:
 		if transcript:
             # Send the transcript to OpenAI GPT model
 			completion = self.client.chat.completions.create(
-				model="gpt-4o-mini",
+				model=self.model,
 				messages=[
 					{"role": "user", "content": transcript}
 				]
@@ -167,11 +133,11 @@ class APIHandler:
 
             # Extract the GPT response content
 			response = completion.choices[0].message.content
-			print("GPT-4o-mini Response: ", response)
+			print(f"{self.model} Response", response)
 			return response
 		return None
 
-	@timed
+	@timed(metrics)
 	def gpt_image_request(self, transcript, photo_path="images/temp_image.jpg"):
 		"""
 		Sends an image and a text prompt to the GPT API and returns the text response.
@@ -188,7 +154,7 @@ class APIHandler:
 		base64_image = encode_image(photo_path)
 
 		response = self.client.chat.completions.create(
-			model="gpt-4o-mini",
+			model=self.model,
 			messages=[
 				{
 					"role": "user",
@@ -209,10 +175,10 @@ class APIHandler:
 		)
 
 		message_content = response.choices[0].message.content
-		print(f"GPT-4o-mini Response: {message_content}")
+		print(f"{self.model} Response: {message_content}")
 		return(message_content)
 
-	#@timed
+	#@timed(metrics)
 	def temp_text_to_speech(self, text):
 		start_time = time.time()
         # Convert text to audio as you have done until now

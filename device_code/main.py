@@ -8,6 +8,8 @@ import time
 
 
 def main():
+    metrics = Metrics()
+    metrics.start()
     # Initialize classes
     sys_config = SystemConfig()
     if not sys_config.check_system_ready():
@@ -56,7 +58,7 @@ def main():
                 text_response = api_handler.gpt_image_request(temp_prompt)
                 context_window += f"USER: {default_prompt} \n GPT: {text_response} \n"
                 # Convert LLM Response to Audio
-                api_handler.text_to_speech(text_response)
+                api_handler.text_to_speech(text_response, metrics)
 
         elif time_pressed > 1.5:
             if button_pressed == 2:   # Image with Custom Prompt
@@ -72,7 +74,7 @@ def main():
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
                 # Convert LLM Response to Audio
-                api_handler.text_to_speech(text_response)
+                api_handler.text_to_speech(text_response, metrics)
 
             elif button_pressed == 1: # Custom Prompt Only
                 # Speech to Text
@@ -84,10 +86,24 @@ def main():
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
                 # Convert LLM Response to Audio
-                api_handler.text_to_speech(text_response)
+                api_handler.text_to_speech(text_response, metrics)
             else:
                 continue
                 #print("waiting for input")
+        
+        if button_pressed != 0: 
+            # Collect total time and log to CSV
+            total_time = metrics.get_total_time()
+            append_metrics_to_csv(
+                "metrics.csv",
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                api_handler.model,
+                metrics.steps,
+                total_time,
+            )
+
+            # Clear metrics for the next request
+            metrics.clear()
 
     # Clean up resources
     device.close()
