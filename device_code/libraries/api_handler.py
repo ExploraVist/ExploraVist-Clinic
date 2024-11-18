@@ -159,7 +159,7 @@ class APIHandler:
 		if transcript:
             # Send the transcript to OpenAI GPT model
 			completion = self.client.chat.completions.create(
-				model="gpt-4o-mini",
+				model="gpt-4o",
 				messages=[
 					{"role": "user", "content": transcript}
 				]
@@ -188,7 +188,7 @@ class APIHandler:
 		base64_image = encode_image(photo_path)
 
 		response = self.client.chat.completions.create(
-			model="gpt-4o-mini",
+			model="gpt-4o",
 			messages=[
 				{
 					"role": "user",

@@ -2,8 +2,10 @@ import pyaudio
 import threading
 import wave
 import time
+from time import sleep
 import numpy as np
 from picamera2 import Picamera2
+from picamera2.previews import QtGlPreview
 from libraries.metrics import timed
 
 class MediaDeviceManager:
@@ -11,6 +13,10 @@ class MediaDeviceManager:
         # Initialize PyAudio and Picamera2
         self.p = pyaudio.PyAudio()
         self.camera = Picamera2()
+        preview_config = self.camera.create_preview_configuration()
+        self.camera.configure(preview_config)
+        self.camera.set_controls({"AfMode": 2}) # Enable Continuous Autofocus
+       # self.camera.start_preview(QtGlPreview())
         self.camera.start()
         
         # Audio parameters
