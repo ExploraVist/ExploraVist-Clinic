@@ -10,8 +10,8 @@ class MediaDeviceManager:
     def __init__(self):
         # Initialize PyAudio and Picamera2
         self.p = pyaudio.PyAudio()
-        self.camera = Picamera2()
-        self.camera.start()
+        #self.camera = Picamera2()
+        #self.camera.start()
         
         # Audio parameters
         self.CHUNK = 44100
@@ -25,9 +25,9 @@ class MediaDeviceManager:
         # Initialize PyAudio and Picamera2 if not already open
         if not self.p:
             self.p = pyaudio.PyAudio()
-        if not self.camera:
-            self.camera = Picamera2()
-            self.camera.start()
+        #if not self.camera:
+        #    self.camera = Picamera2()
+        #    self.camera.start()
         print("Resources opened.")
 
     def amplify_audio(self, input_filename, output_filename, gain=4):
@@ -103,14 +103,15 @@ class MediaDeviceManager:
     def capture_image(self, filename="images/temp_image.jpg"):
         
         # Capture an image with the Picamera2
-        self.camera.capture_file(filename)
-        print(f"Image captured as {filename}")
+        pass
+        #self.camera.capture_file(filename)
+        #print(f"Image captured as {filename}")
 
     def close(self):
         # Clean up resources
-        if self.camera:
-            self.camera.close()
-            self.camera = None
+        #if self.camera:
+        #    self.camera.close()
+        #    self.camera = None
         if self.p:
             self.p.terminate()
             self.p = None

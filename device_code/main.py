@@ -48,6 +48,7 @@ def main():
 
         if time_pressed <= 1.6 and time_pressed >= 0.1: # Image Description Using Default Prompt
             # Image Response
+            pass
             if button_pressed == 2:
                 # Take image
                 device.capture_image()
@@ -60,6 +61,7 @@ def main():
 
         elif time_pressed > 1.5:
             if button_pressed == 2:   # Image with Custom Prompt
+                pass
                 # Take image
                 device.capture_image()
 
