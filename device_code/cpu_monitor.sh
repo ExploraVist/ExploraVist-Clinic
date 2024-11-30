@@ -3,7 +3,7 @@
 # File paths
 MPSTAT_LOG="data_log/cpu_usage.txt"       # Log file for mpstat
 CSV_OUTPUT="data_log/cpu_usage.csv"       # Converted CSV file
-PYTHON_CSV_CONVERTER="convert_mpstat_to_csv.py"  # Python script to handle CSV conversion
+PYTHON_CSV_CONVERTER="libraries/convert_mpstat_to_csv.py"  # Python script to handle CSV conversion
 
 # Function to clean up on Ctrl+C or script exit
 cleanup() {
