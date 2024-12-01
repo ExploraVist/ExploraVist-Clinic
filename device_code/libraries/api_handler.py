@@ -31,15 +31,15 @@ class APIHandler:
                         "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
                         "Content-Type": "text/plain"
                 })
-
+        @timed
         def text_to_speech(self, text):
                 """
-                Converts text to speech using the Deepgram TTS API and plays the audio.
+                Converts text to speech using the Deepgram TTS API and saves the audio file.
 
                 Parameters:
                         text (str): Text to be converted to speech.
-                        Returns:
-                        None
+                Returns:
+                        str: Path to the converted audio file, or None if conversion fails
                 """
                 temp_time = time.time()
                 start_time = time.time()
@@ -47,8 +47,8 @@ class APIHandler:
 
                 try:
                         # Send the request to Deepgram's TTS API
-                        response = self.session.post(url, data=text.encode('utf-8')) # Encode to UTF-8 as Deepgram only accepts UTF-8
-                        response.raise_for_status()  # Ensure no HTTP errors
+                        response = self.session.post(url, data=text.encode('utf-8'))
+                        response.raise_for_status()
 
                         print(f"API Request Time: {time.time() - temp_time:.2f} seconds")
                         temp_time = time.time()
@@ -61,7 +61,7 @@ class APIHandler:
                         print(f"File Save Time: {time.time() - temp_time:.2f} seconds")
                         temp_time = time.time()
 
-                        # Convert the file to a standard WAV format with ffmpeg if needed
+                        # Convert and amplify the audio file
                         converted_file = "audio/converted_response.wav"
                         temp_amplified_file = "audio/temp_amplified.wav"
                         conversion_command = [
@@ -71,50 +71,57 @@ class APIHandler:
                                 "ffmpeg", "-y", "-i", converted_file, "-filter:a", "volume=3", temp_amplified_file
                         ]
 
-                        # Play the converted file
                         try:
-                                # Convert the file to a standard format
                                 subprocess.run(conversion_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
                                 print(f"Audio Conversion Time: {time.time() - temp_time:.2f} seconds")
                                 temp_time = time.time()
 
-                                # Amplify the file
                                 subprocess.run(amplification_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
                                 os.replace(temp_amplified_file, converted_file)
 
-                                if os.path.exists(converted_file):
-                                        print("Audio data received successfully. Playing audio...")
-                                        audio_process = subprocess.Popen(["aplay", converted_file])
-
-                                        print(f"Total Time Until Audio: {time.time() - start_time} seconds")
-
-                                        # Monitor GPIO 22 to cancel playback
-                                        while audio_process.poll() is None:
-                                                if GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:  # Button is pressed
-                                                        print("Button pressed, stopping audio playback.")
-                                                        audio_process.terminate()
-                                                        self.canceled = 1
-                                                        break
-                                                time.sleep(0.1)  # Check every 100ms
-                                        audio_process.wait()  # Wait for the process to finish
-
-                                        print(f"Playback Time: {time.time() - temp_time:.2f} seconds")
-                                        print("Playback finished.")
-
-                                        # Clean up temporary files
-                                        os.remove(temp_file)
-                                        os.remove(converted_file)
-                                else:
-                                        print("Error: Converted audio file not saved correctly.")
-
-                                # Print the total time taken for the text-to-speech process
-                                print(f"Total Text-to-Speech Time: {time.time() - start_time:.2f} seconds")
+                                os.remove(temp_file)
+                                return converted_file
 
                         except subprocess.CalledProcessError as e:
                                 print(f"Error during audio processing: {e}")
+                                return None
 
                 except requests.exceptions.RequestException as e:
                         print(f"Error during request: {e}")
+                        return None
+
+        @timed
+        def play_audio(self, audio_file):
+                """
+                Plays the converted audio file and monitors for cancellation.
+
+                Parameters:
+                        audio_file (str): Path to the audio file to play
+                """
+                if not os.path.exists(audio_file):
+                        print("Error: Audio file not found.")
+                        return
+
+                print("Audio data received successfully. Playing audio...")
+                temp_time = time.time()
+                
+                audio_process = subprocess.Popen(["aplay", audio_file])
+
+                # Monitor GPIO 22 to cancel playback
+                while audio_process.poll() is None:
+                        if GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:  # Button is pressed
+                                print("Button pressed, stopping audio playback.")
+                                audio_process.terminate()
+                                self.canceled = 1
+                                break
+                        time.sleep(0.1)  # Check every 100ms
+                audio_process.wait()
+
+                print(f"Playback Time: {time.time() - temp_time:.2f} seconds")
+                print("Playback finished.")
+
+                # Clean up the converted file
+                os.remove(audio_file)
 
         @timed
         def audio_to_text(self, file_path="audio/audio.wav"):
