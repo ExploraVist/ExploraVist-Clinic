@@ -5,7 +5,7 @@ import requests
 import subprocess
 import RPi.GPIO as GPIO
 import time
-from libraries.metrics import timed, export_timing_data
+from libraries.metrics import timed
 
 def encode_image(image_path):
         with open(image_path, "rb") as image_file:
@@ -233,8 +233,7 @@ class APIHandler:
                 print(f"GPT-4o-mini Response: {message_content}")
                 return(message_content)
 
-        # Append timing data to the CSV file
-        export_timing_data('timing_results.csv')
+        
 
         class MemoryManager:
                 def __init__(self):

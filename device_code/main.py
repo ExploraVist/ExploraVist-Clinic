@@ -4,6 +4,7 @@ from libraries.sys_config import SystemConfig
 import RPi.GPIO as GPIO  # Import Raspberry Pi GPIO library
 from libraries.config import config
 import libraries.config
+from libraries.metrics import export_timing_data
 import time
 
 
@@ -94,6 +95,9 @@ def main():
             else:
                 continue
                 #print("waiting for input")
+            
+            # Append timing data to the CSV file
+            export_timing_data('timing_results.csv')
 
     # Clean up resources
     device.close()
