@@ -57,6 +57,8 @@ def main():
                 context_window += f"USER: {default_prompt} \n GPT: {text_response} \n"
                 # Convert LLM Response to Audio
                 api_handler.text_to_speech(text_response)
+                
+                api_handler.play_audio()
 
         elif time_pressed > 1.5:
             if button_pressed == 2:   # Image with Custom Prompt
@@ -73,6 +75,8 @@ def main():
 
                 # Convert LLM Response to Audio
                 api_handler.text_to_speech(text_response)
+                
+                api_handler.play_audio()
 
             elif button_pressed == 1: # Custom Prompt Only
                 # Speech to Text
@@ -85,6 +89,8 @@ def main():
 
                 # Convert LLM Response to Audio
                 api_handler.text_to_speech(text_response)
+                
+                api_handler.play_audio()
             else:
                 continue
                 #print("waiting for input")

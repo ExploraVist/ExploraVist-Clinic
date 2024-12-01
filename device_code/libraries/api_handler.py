@@ -72,14 +72,14 @@ class APIHandler:
                         ]
 
                         try:
-                                subprocess.run(conversion_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+                                subprocess.run(conversion_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True) # Convert the audio file
                                 print(f"Audio Conversion Time: {time.time() - temp_time:.2f} seconds")
                                 temp_time = time.time()
 
-                                subprocess.run(amplification_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-                                os.replace(temp_amplified_file, converted_file)
+                                subprocess.run(amplification_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True) # Amplify the audio file
+                                os.replace(temp_amplified_file, converted_file) # Rename the amplified file to the converted file
 
-                                os.remove(temp_file)
+                                os.remove(temp_file) # Remove the temporary file
                                 return converted_file
 
                         except subprocess.CalledProcessError as e:
