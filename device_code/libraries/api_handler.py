@@ -5,7 +5,7 @@ import requests
 import subprocess
 import RPi.GPIO as GPIO
 import time
-from libraries.metrics import timed
+from libraries.metrics import timed, export_timing_data
 
 def encode_image(image_path):
         with open(image_path, "rb") as image_file:
@@ -50,16 +50,16 @@ class APIHandler:
                         response = self.session.post(url, data=text.encode('utf-8'))
                         response.raise_for_status()
 
-                        print(f"API Request Time: {time.time() - temp_time:.2f} seconds")
-                        temp_time = time.time()
+                        # print(f"API Request Time: {time.time() - temp_time:.2f} seconds")
+                        # temp_time = time.time()
 
                         # Save the response audio to a file
                         temp_file = "audio/audio.wav"
                         with open(temp_file, "wb") as audio_file:
                                 audio_file.write(response.content)
 
-                        print(f"File Save Time: {time.time() - temp_time:.2f} seconds")
-                        temp_time = time.time()
+                        # print(f"File Save Time: {time.time() - temp_time:.2f} seconds")
+                        # temp_time = time.time()
 
                         # Convert and amplify the audio file
                         converted_file = "audio/converted_response.wav"
@@ -73,8 +73,9 @@ class APIHandler:
 
                         try:
                                 subprocess.run(conversion_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True) # Convert the audio file
-                                print(f"Audio Conversion Time: {time.time() - temp_time:.2f} seconds")
-                                temp_time = time.time()
+                                
+                                # print(f"Audio Conversion Time: {time.time() - temp_time:.2f} seconds")
+                                # temp_time = time.time()
 
                                 subprocess.run(amplification_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True) # Amplify the audio file
                                 os.replace(temp_amplified_file, converted_file) # Rename the amplified file to the converted file
@@ -103,7 +104,7 @@ class APIHandler:
                         return
 
                 print("Audio data received successfully. Playing audio...")
-                temp_time = time.time()
+                # temp_time = time.time()
                 
                 audio_process = subprocess.Popen(["aplay", audio_file])
 
@@ -117,8 +118,8 @@ class APIHandler:
                         time.sleep(0.1)  # Check every 100ms
                 audio_process.wait()
 
-                print(f"Playback Time: {time.time() - temp_time:.2f} seconds")
-                print("Playback finished.")
+                # print(f"Playback Time: {time.time() - temp_time:.2f} seconds")
+                # print("Playback finished.")
 
                 # Clean up the converted file
                 os.remove(audio_file)
@@ -232,60 +233,8 @@ class APIHandler:
                 print(f"GPT-4o-mini Response: {message_content}")
                 return(message_content)
 
-        #@timed
-        def temp_text_to_speech(self, text):
-                start_time = time.time()
-        # Convert text to audio as you have done until now
-        # The URL for Deepgram TTS
-                url = "https://api.deepgram.com/v1/speak"
-
-        # Construct the payload as plain text
-                payload = text  # Plain text with no encoding
-
-        # Construct the curl command
-                curl_command = [
-                        "curl",
-                        "-X", "POST", url,
-                        "-H", f"Authorization: Token {self.DEEPGRAM_API_KEY}",
-                        "-H", "Content-Type: text/plain",  # Set Content-Type to text/plain
-                        "--data", payload  # Use --data for plain text
-                ]
-        # FFmpeg command to convert the audio stream directly
-                ffmpeg_command = [
-                        "ffmpeg",
-                        "-y",  # Overwrite output file without asking
-                        "-i", "pipe:0",  # Input from the pipe
-                        "-ar", "44100",  # Set audio sample rate
-                        "-ac", "2",      # Set audio channels
-                        output_file      # Output file
-                ]
-                try:
-                        with subprocess.Popen(curl_command, stdout=subprocess.PIPE) as curl_proc:
-                                ffmpeg_result = subprocess.run(ffmpeg_command, stdin=curl_proc.stdout)
-                                if ffmpeg_result.returncode == 0:
-                                        print("Audio data received successfully. Playing audio...")
-                                        audio_process = subprocess.Popen(["aplay", output_file])
-                                        print(f"Speech to Text: {time.time() - start_time}")
-                # Continuously check GPIO 22 while playing audio
-                                        while audio_process.poll() is None:
-                                                if GPIO.input(22) == GPIO.LOW:  # Button is pressed
-                                                        print("Button pressed, stopping audio playback.")
-                                                        audio_process.terminate()
-                                                        self.canceled = 1
-                                                        break
-                                                time.sleep(0.1)  # Check every 100ms
-                                        audio_process.wait()  # Wait for the process to finish or be terminated
-                                        print("Playback finished.")
-
-                                        if os.path.exists(output_file):
-                                                os.remove(output_file)
-                                        else:
-                                                print("Error: The audio file is empty or not saved correctly.")
-                                else:
-                                        print(f"Error: {result.stderr.decode('utf-8', errors='ignore')}")
-
-                except Exception as e:
-                        print(f"Error running curl command: {e}")
+        # Append timing data to the CSV file
+        export_timing_data('timing_results.csv')
 
         class MemoryManager:
                 def __init__(self):
