@@ -91,7 +91,7 @@ class APIHandler:
                         return None
 
         @timed
-        def play_audio(self, audio_file):
+        def play_audio(self, audio_file="audio/converted_response.wav"):
                 """
                 Plays the converted audio file and monitors for cancellation.
 
