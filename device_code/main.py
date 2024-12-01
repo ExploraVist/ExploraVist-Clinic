@@ -96,8 +96,8 @@ def main():
                 continue
                 #print("waiting for input")
             
-            # Append timing data to the CSV file
-            export_timing_data('timing_results.csv')
+        # Append timing data to the CSV file
+        export_timing_data('data_log/timing_results.csv')
 
     # Clean up resources
     device.close()
