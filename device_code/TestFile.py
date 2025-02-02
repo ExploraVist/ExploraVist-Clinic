@@ -6,6 +6,9 @@ from libraries.config import config
 import libraries.config
 import time
 import os
+import subprocess
+from libraries.metrics import timed
+
 
 
 def main():
@@ -111,6 +114,12 @@ def main():
         else:
             api_handler.text_to_speech("GPT image request was not successful")
             print("GPT image request not successful")
+
+
+        api_handler.text_to_speech("Audio will now be played from the speaker within the next 5 seconds")
+        print("Audio will now be played from the speaker within the next 5 seconds")
+
+        api_handler.play_audio("sample-3s.wav")
         
     # Clean up resources
     device.close()
