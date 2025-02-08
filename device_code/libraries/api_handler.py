@@ -103,19 +103,19 @@ class APIHandler:
                         print("Error: Audio file not found.")
                         return
 
-                print("Audio data received successfully. Playing audio...")
+                #print("Audio data received successfully. Playing audio...")
                 # temp_time = time.time()
                 
                 audio_process = subprocess.Popen(["aplay", audio_file])
 
                 # Monitor GPIO 22 to cancel playback
-                while audio_process.poll() is None:
-                        if GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:  # Button is pressed
-                                print("Button pressed, stopping audio playback.")
-                                audio_process.terminate()
-                                self.canceled = 1
-                                break
-                        time.sleep(0.1)  # Check every 100ms
+               # while audio_process.poll() is None:
+                        #if GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:  # Button is pressed
+                                #print("Button pressed, stopping audio playback.")
+                                #audio_process.terminate()
+                                #self.canceled = 1
+                                #break
+                        #time.sleep(0.1)  # Check every 100ms
                 audio_process.wait()
 
                 # print(f"Playback Time: {time.time() - temp_time:.2f} seconds")

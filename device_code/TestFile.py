@@ -42,7 +42,7 @@ def main():
         api_handler.play_audio()
         print("press the front button")
         time.sleep(5)
-        if GPIO.input(22) == GPIO.LOW:
+        if GPIO.input(27) == GPIO.LOW:
             api_handler.text_to_speech("front button is working")
             print("front button is working")
             api_handler.play_audio()
@@ -56,7 +56,7 @@ def main():
         api_handler.text_to_speech("Press the back button")
         api_handler.play_audio()
         time.sleep(5)
-        if GPIO.input(27) == GPIO.LOW and (button_time - time.time() < 5):
+        if GPIO.input(22) == GPIO.LOW and (button_time - time.time() < 5):
                 print("back button is working")
                 api_handler.text_to_speech("back button is working")
                 api_handler.play_audio()
