@@ -8,6 +8,7 @@ import time
 import os
 import subprocess
 from libraries.metrics import timed
+import shutil
 
 
 
@@ -66,7 +67,7 @@ def main():
             api_handler.play_audio()
         
         time.sleep(5)
-        output_file = "audio/converted_response.wav"
+        output_file = "audio/audio.wav"
         
         if os.path.exists(output_file):
             os.remove(output_file)
@@ -84,7 +85,11 @@ def main():
             api_handler.play_audio()
             api_handler.text_to_speech("we'll play the audio")
             api_handler.play_audio()
-            subprocess.Popen(["aplay", output_file])
+            source = output_file
+            destination = "audio/converted_response.wav"
+            shutil.copyfile(source, destination)
+            api_handler.play_audio()
+            
         else:
             api_handler.text_to_speech("recording is not working")
             print("recording is not working")
