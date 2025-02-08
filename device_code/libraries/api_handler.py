@@ -33,8 +33,6 @@ class APIHandler:
                 })
         @timed
         def text_to_speech(self, text):
-                print("text_to_speech called on")
-                print(text)
                 """
                 Converts text to speech using the Deepgram TTS API and saves the audio file.
 
