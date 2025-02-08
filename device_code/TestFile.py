@@ -139,15 +139,6 @@ def main():
             api_handler.play_audio()
 
 
-        api_handler.text_to_speech("Audio will now be played from the speaker within the next 5 seconds")
-        print("Audio will now be played from the speaker within the next 5 seconds")
-        api_handler.play_audio()
-
-        api_handler.play_audio("piano2.wav")
-        with open("piano2.wav", "rb") as src, open("audio/converted_response.wav", "wb") as dst:
-                dst.write(src.read())
-        api_handler.play_audio()
-
         break
     device.close()
 
