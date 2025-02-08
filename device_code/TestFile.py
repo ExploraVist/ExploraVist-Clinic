@@ -139,7 +139,8 @@ def main():
         api_handler.play_audio("sample-3s.wav")
         api_handler.play_audio()
 
-        device.close()
+        break
+    device.close()
 
 if __name__ == '__main__':
     main()
