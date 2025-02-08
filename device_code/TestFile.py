@@ -41,7 +41,7 @@ def main():
         api_handler.text_to_speech("Press the front button")
         api_handler.play_audio()
         print("press the front button")
-        time.sleep(1)
+        time.sleep(5)
         if GPIO.input(22) == GPIO.LOW:
             api_handler.text_to_speech("front button is working")
             print("front button is working")
@@ -55,6 +55,7 @@ def main():
         print ("press the back button")
         api_handler.text_to_speech("Press the back button")
         api_handler.play_audio()
+        time.sleep(5)
         if GPIO.input(27) == GPIO.LOW and (button_time - time.time() < 5):
                 print("back button is working")
                 api_handler.text_to_speech("back button is working")
@@ -63,7 +64,8 @@ def main():
             api_handler.text_to_speech("back button was not working")
             print("back button is not working")
             api_handler.play_audio()
-
+        
+        time.sleep(5)
         output_file = "audio/audio.wav"
         
         if os.path.exists(output_file):
@@ -85,13 +87,14 @@ def main():
             print("recording is not working")
             api_handler.play_audio()
         
+        time.sleep(5)
         output_image = "images/temp_image.jpg"
 
         if os.path.exists(output_image):
             os.remove(output_image)
         
         device.capture_image(output_image)
-        time.sleep(1)
+        time.sleep(5)
 
         if os.path.exists(output_image):
             api_handler.text_to_speech("camera is working")
@@ -101,7 +104,8 @@ def main():
             api_handler.text_to_speech("camera is not working")
             print("camera is not working")
             api_handler.play_audio()
-
+        
+        time.sleep(5)
         temp_prompt = "What is the result of 2+2"
         response = api_handler.gpt_request(temp_prompt)
         if response is not None:
@@ -134,9 +138,8 @@ def main():
 
         api_handler.play_audio("sample-3s.wav")
         api_handler.play_audio()
-        
-    # Clean up resources
-    device.close()
+
+        device.close()
 
 if __name__ == '__main__':
     main()
