@@ -39,6 +39,7 @@ def main():
         api_handler.canceled = 0
 
         api_handler.text_to_speech("Press the front button")
+        api_handler.play_audio()
         print("press the front button")
         button_time = time.time()
         while (button_time- time.time() < 5):
