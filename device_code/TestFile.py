@@ -85,10 +85,8 @@ def main():
             api_handler.play_audio()
             api_handler.text_to_speech("we'll play the audio")
             api_handler.play_audio()
-            source = output_file
-            destination = "audio/converted_response.wav"
-            shutil.copyfile(source, destination)
-            api_handler.play_audio()
+            with open(output_file, "rb") as src, open("audio/converted_response.wav", "wb") as dst:
+                dst.write(src.read())
             
         else:
             api_handler.text_to_speech("recording is not working")
