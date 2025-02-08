@@ -103,20 +103,20 @@ class APIHandler:
                         print("Error: Audio file not found.")
                         return
 
-                #print("Audio data received successfully. Playing audio...")
+                print("Audio data received successfully. Playing audio...")
                 # temp_time = time.time()
                 
                 audio_process = subprocess.Popen(["aplay", audio_file])
 
                 # Monitor GPIO 22 to cancel playback
-                #while audio_process.poll() is None:
-                        #if GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:  # Button is pressed
-                               #print("Button pressed, stopping audio playback.")
-                                #audio_process.terminate()
-                                #self.canceled = 1
-                                #break
-                        #time.sleep(0.1)  # Check every 100ms
-                #audio_process.wait()
+                while audio_process.poll() is None:
+                        if GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:  # Button is pressed
+                                print("Button pressed, stopping audio playback.")
+                                audio_process.terminate()
+                                self.canceled = 1
+                                break
+                        time.sleep(0.1)  # Check every 100ms
+                audio_process.wait()
 
                 # print(f"Playback Time: {time.time() - temp_time:.2f} seconds")
                 # print("Playback finished.")
@@ -157,13 +157,13 @@ class APIHandler:
                                 if "results" in result and result["results"]["channels"][0]["alternatives"]:
                     # Extract the transcript
                                         transcript = result["results"]["channels"][0]["alternatives"][0]["transcript"]
-                                        #print(f"Speech to Text: {transcript}")
+                                        print(f"Speech to Text: {transcript}")
                                         return transcript
                                 else:
-                                        #print("Error: No transcription found in the response.")
+                                        print("Error: No transcription found in the response.")
                                         return None
                         else:
-                                #print(f"Error: {response.status_code} - {response.text}")
+                                print(f"Error: {response.status_code} - {response.text}")
                                 return None
 
         @timed
@@ -188,7 +188,7 @@ class APIHandler:
 
             # Extract the GPT response content
                         response = completion.choices[0].message.content
-                        #print("GPT-4o-mini Response: ", response)
+                        print("GPT-4o-mini Response: ", response)
                         return response
                 return None
 
@@ -230,7 +230,7 @@ class APIHandler:
                 )
 
                 message_content = response.choices[0].message.content
-                #(f"GPT-4o-mini Response: {message_content}")
+                print(f"GPT-4o-mini Response: {message_content}")
                 return(message_content)
 
         
