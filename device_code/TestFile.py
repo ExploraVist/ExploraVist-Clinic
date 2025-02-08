@@ -38,7 +38,7 @@ def main():
             time.sleep(1)
         api_handler.canceled = 0
 
-        output_file = "audio/audio.wav"
+        output_file = "audio/help.wav"
         
         if os.path.exists(output_file):
             os.remove(output_file)
@@ -51,13 +51,13 @@ def main():
         time.sleep(5)
         device.stop_recording()
         if os.path.exists(output_file):
-            with open(output_file, "rb") as src, open("audio/converted_response.wav", "wb") as dst:
-                dst.write(src.read())
-            api_handler.play_audio()
             api_handler.text_to_speech("recording is working")
             print("recording is working")
             api_handler.play_audio()
             api_handler.text_to_speech("we'll play the audio")
+            api_handler.play_audio()
+            with open(output_file, "rb") as src, open("audio/converted_response.wav", "wb") as dst:
+                dst.write(src.read())
             api_handler.play_audio()
 
         api_handler.text_to_speech("Press the front button")
