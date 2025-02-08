@@ -66,7 +66,7 @@ def main():
             api_handler.play_audio()
         
         time.sleep(5)
-        output_file = "audio/audio.wav"
+        output_file = "audio/converted_response.wav"
         
         if os.path.exists(output_file):
             os.remove(output_file)
