@@ -45,21 +45,24 @@ def main():
         if GPIO.input(22) == GPIO.LOW:
             api_handler.text_to_speech("front button is working")
             print("front button is working")
+            api_handler.play_audio()
         else:
             api_handler.text_to_speech("front button was not working")
             print("front button is not working")
+            api_handler.play_audio()
         
         button_time = time.time()
         print ("press the back button")
         api_handler.text_to_speech("Press the back button")
-        while (button_time-time.time() < 5):
-            if GPIO.input(27) == GPIO.LOW and (button_time - time.time() < 5):
+        api_handler.play_audio()
+        if GPIO.input(27) == GPIO.LOW and (button_time - time.time() < 5):
                 print("back button is working")
                 api_handler.text_to_speech("back button is working")
-            
-        if (button_time - time.time() > 5):
+                api_handler.play_audio()
+        else:
             api_handler.text_to_speech("back button was not working")
             print("back button is not working")
+            api_handler.play_audio()
 
         output_file = "audio/audio.wav"
         
@@ -67,6 +70,8 @@ def main():
             os.remove(output_file)
         
         api_handler.text_to_speech("speak for up to five second")
+        api_handler.play_audio()
+        print("speak for 5 second")
         recording_time = time.time()
         device.start_recording(output_file)
         time.sleep(5)
@@ -74,9 +79,11 @@ def main():
         if os.path.exists(output_file):
             api_handler.text_to_speech("recording is working")
             print("recording is working")
+            api_handler.play_audio()
         else:
             api_handler.text_to_speech("recording is not working")
             print("recording is not working")
+            api_handler.play_audio()
         
         output_image = "images/temp_image.jpg"
 
@@ -89,18 +96,22 @@ def main():
         if os.path.exists(output_image):
             api_handler.text_to_speech("camera is working")
             print("camera is working")
+            api_handler.play_audio()
         else:
             api_handler.text_to_speech("camera is not working")
             print("camera is not working")
+            api_handler.play_audio()
 
         temp_prompt = "What is the result of 2+2"
         response = api_handler.gpt_request(temp_prompt)
         if response is not None:
             api_handler.text_to_speech("GPT text is working")
             print("GPT text is working")
+            api_handler.play_audio()
         else:
             api_handler.text_to_speech("GPT text is working")
             print("GPT text is working")
+            api_handler.play_audio()
         if response == "the result of 2 + 2 is 4":
             print ("accuracy?")
         
@@ -110,15 +121,19 @@ def main():
         if response is not None:
             api_handler.text_to_speech("GPT image request was successful")
             print("GPT image request was successful")
+            api_handler.play_audio()
         else:
             api_handler.text_to_speech("GPT image request was not successful")
             print("GPT image request not successful")
+            api_handler.play_audio()
 
 
         api_handler.text_to_speech("Audio will now be played from the speaker within the next 5 seconds")
         print("Audio will now be played from the speaker within the next 5 seconds")
+        api_handler.play_audio()
 
         api_handler.play_audio("sample-3s.wav")
+        api_handler.play_audio()
         
     # Clean up resources
     device.close()
