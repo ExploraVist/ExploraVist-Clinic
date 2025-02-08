@@ -136,7 +136,7 @@ def main():
         print("Audio will now be played from the speaker within the next 5 seconds")
         api_handler.play_audio()
 
-        api_handler.play_audio("sample-3s.wav")
+        api_handler.play_audio("piano2.wav")
         api_handler.play_audio()
 
         break
