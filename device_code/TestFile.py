@@ -84,7 +84,7 @@ def main():
             api_handler.play_audio()
             api_handler.text_to_speech("we'll play the audio")
             api_handler.play_audio()
-            api_handler.play_audio(output_file)
+            subprocess.Popen(["aplay", output_file])
         else:
             api_handler.text_to_speech("recording is not working")
             print("recording is not working")
