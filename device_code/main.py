@@ -7,8 +7,6 @@ import libraries.config
 import time
 
 
-
-
 def main():
     # Initialize classes
     sys_config = SystemConfig()
