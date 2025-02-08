@@ -103,7 +103,7 @@ class APIHandler:
                         print("Error: Audio file not found.")
                         return
 
-                print("Audio data received successfully. Playing audio...")
+                print(f"Audio data received successfully. Playing audio: {audio_file}")
                 # temp_time = time.time()
                 
                 audio_process = subprocess.Popen(["aplay", audio_file])
