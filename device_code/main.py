@@ -7,6 +7,8 @@ import libraries.config
 import time
 
 
+
+
 def main():
     # Initialize classes
     sys_config = SystemConfig()
@@ -47,6 +49,7 @@ def main():
         time_pressed = time.time() - start_time
 
         if time_pressed <= 1.6 and time_pressed >= 0.1: # Image Description Using Default Prompt
+            api_handler.play_audio("audio_files/popClick.wav") # Play Button Click Sound
             # Image Response
             if button_pressed == 2:
                 # Take image
@@ -61,6 +64,7 @@ def main():
                 api_handler.play_audio()
 
         elif time_pressed > 1.5:
+            api_handler.play_audio("audio_files/popClick.wav") # Play Button Click Sound
             if button_pressed == 2:   # Image with Custom Prompt
                 # Take image
                 device.capture_image()
