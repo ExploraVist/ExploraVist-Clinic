@@ -100,7 +100,7 @@ class APIHandler:
                         audio_file (str): Path to the audio file to play
                 """
                 if not os.path.exists(audio_file):
-                        print("Error: Audio file not found.")
+                        print(F"Error: Audio file not found: {audio_file}")
                         return
 
                 print(f"Audio data received successfully. Playing audio: {audio_file}")
