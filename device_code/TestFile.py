@@ -39,6 +39,27 @@ def main():
             time.sleep(1)
         api_handler.canceled = 0
 
+        output_file = "audio/audio.wav"
+        
+        if os.path.exists(output_file):
+            os.remove(output_file)
+        
+        api_handler.text_to_speech("speak for up to five second")
+        api_handler.play_audio()
+        print("speak for 5 second")
+        recording_time = time.time()
+        device.start_recording(output_file)
+        time.sleep(5)
+        device.stop_recording()
+        if os.path.exists(output_file):
+            api_handler.text_to_speech("recording is working")
+            print("recording is working")
+            api_handler.play_audio()
+            api_handler.text_to_speech("we'll play the audio")
+            api_handler.play_audio()
+            with open(output_file, "rb") as src, open("audio/converted_response.wav", "wb") as dst:
+                dst.write(src.read())
+
         api_handler.text_to_speech("Press the front button")
         api_handler.play_audio()
         print("press the front button")
