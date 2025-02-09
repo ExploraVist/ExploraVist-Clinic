@@ -9,6 +9,8 @@ import threading
 import subprocess
 import os
 
+filler_process = None  # Initialize the global variable
+
 def play_filler_sound():
     """Plays a looping filler sound in the background."""
     global filler_process
