@@ -6,11 +6,17 @@ import subprocess
 import RPi.GPIO as GPIO
 import time
 from libraries.metrics import timed
-import threading
+import asyncio
+import websockets
+import json
 
 def encode_image(image_path):
         with open(image_path, "rb") as image_file:
                 return base64.b64encode(image_file.read()).decode('utf-8')
+
+
+DEEPGRAM_TTS_URL = "wss://api.deepgram.com/v1/speak"
+
 
 class APIHandler:
     #TODO incorporate a requests.Session() for Keep-Alive, Ex:
@@ -32,6 +38,28 @@ class APIHandler:
                         "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
                         "Content-Type": "text/plain"
                 })
+
+        @timed
+        async def stream_tts(self,text):
+                async with websockets.connect(DEEPGRAM_TTS_URL,extra_headers={"Authorization": f"Token {self.DEEPGRAM_API_KEY}"}) as websocket:
+                # Send the request to Deepgram
+                        request = {
+                        "text": text,
+                        "encoding": "linear16", 
+                        "sample_rate": 16000,  
+                        "voice": "aura",  
+                        }
+                        await websocket.send(json.dumps(request))
+
+                        
+                        with open("output.wav", "wb") as audio_file:
+                                while True:
+                                        try:
+                                                response = await websocket.recv()
+                                                audio_file.write(response)  
+                                        except websockets.exceptions.ConnectionClosed:
+                                                print("Streaming complete.")
+                                                break
         @timed
         def text_to_speech(self, text):
                 """
