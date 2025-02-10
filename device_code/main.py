@@ -91,10 +91,6 @@ def main():
 
                 # Convert LLM Response to Audio
                 api_handler.stream_tts(text_response)
-
-                
-
-                
                 
                 api_handler.play_audio()
 

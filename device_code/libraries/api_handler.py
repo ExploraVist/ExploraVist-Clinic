@@ -56,7 +56,7 @@ class APIHandler:
                                 while True:
                                         try:
                                                 response = await websocket.recv()
-                                                audio_file.write(response)  
+                                                self.play_audio(response) 
                                         except websockets.exceptions.ConnectionClosed:
                                                 print("Streaming complete.")
                                                 break
