@@ -14,8 +14,6 @@ from pydub import AudioSegment
 import sounddevice as sd
 
 
-
-
 def encode_image(image_path):
         with open(image_path, "rb") as image_file:
                 return base64.b64encode(image_file.read()).decode('utf-8')
@@ -190,7 +188,7 @@ class APIHandler:
                 # print("Playback finished.")
 
                 # Clean up the converted file
-                os.remove(audio_file)
+                # os.remove(audio_file)
 
         @timed
         def audio_to_text(self, file_path="audio/audio.wav"):

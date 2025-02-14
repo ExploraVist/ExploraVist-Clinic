@@ -66,7 +66,7 @@ def main():
                 text_response = api_handler.gpt_image_request(temp_prompt)
                 context_window += f"USER: {default_prompt} \n GPT: {text_response} \n"
                 # Convert LLM Response to Audio
-                api_handler.stream_tts(text_response)
+                api_handler.stream_tts(text_response,api_key)
 
 
                 
@@ -92,7 +92,7 @@ def main():
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
                 # Convert LLM Response to Audio
-                api_handler.stream_tts(text_response)
+                api_handler.stream_tts(text_response,api_key)
                 
                # api_handler.play_audio()
 
@@ -111,7 +111,7 @@ def main():
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
                 # Convert LLM Response to Audio
-                api_handler.stream_tts(text_response)
+                api_handler.stream_tts(text_response,api_key)
                 
 
                 #api_handler.play_audio()
