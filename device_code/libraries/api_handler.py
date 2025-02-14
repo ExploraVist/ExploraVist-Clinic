@@ -9,6 +9,15 @@ from libraries.metrics import timed
 import asyncio
 import websockets
 import json
+import time
+import requests
+import numpy as np
+import io
+from pydub import AudioSegment
+import sounddevice as sd
+
+
+
 
 def encode_image(image_path):
         with open(image_path, "rb") as image_file:
@@ -40,26 +49,59 @@ class APIHandler:
                 })
 
         @timed
-        async def stream_tts(self,text):
-                async with websockets.connect(DEEPGRAM_TTS_URL,extra_headers={"Authorization": f"Token {self.DEEPGRAM_API_KEY}"}) as websocket:
-                # Send the request to Deepgram
-                        request = {
-                        "text": text,
-                        "encoding": "linear16", 
-                        "sample_rate": 16000,  
-                        "voice": "aura",  
-                        }
-                        await websocket.send(json.dumps(request))
+        def stream_text_to_speech(self, text, api_key, model="aura-asteria-en"):
+                """
+                Streams Deepgram's TTS audio and plays it in real-time.
+                """
+                url = f"https://api.deepgram.com/v1/speak?model={model}"
+                headers = {
+                        "Authorization": f"Token {api_key}",
+                        "Content-Type": "application/json"
+                }
+                data = {"text": text}
 
+                # Start streaming from the API
+                with requests.post(url, headers=headers, json=data, stream=True) as response:
+                        if response.status_code == 200:
+                                content_type = response.headers.get('Content-Type', '')
+
+                                if 'audio/mpeg' in content_type:
+                                        format_type = "mp3"
+                                elif 'audio/wav' in content_type:
+                                        format_type = "wav"
+                                else:
+                                        print("Error: Unexpected content type.")
+                                        return
+
+                                # Process the audio in real-time
+                                buffer = io.BytesIO()
+                                stream = sd.OutputStream(dtype='int16')  # Create an audio stream
+                                stream.start()
+
+                                for chunk in response.iter_content(chunk_size=4096):  # Process small chunks
+                                        if chunk:
+                                                buffer.write(chunk)
+                                                buffer.seek(0)  # Reset position for decoding
+
+                                                # Decode chunk
+                                                if format_type == "mp3":
+                                                        audio = AudioSegment.from_mp3(buffer)
+                                                else:
+                                                        audio = AudioSegment.from_wav(buffer)
+
+                                                samples = np.array(audio.get_array_of_samples()).astype(np.float32)
+                                                samples /= np.max(np.abs(samples))  # Normalize audio
+
+                                                # Play the decoded chunk immediately
+                                                stream.write(samples)
+                                                
+                                                buffer.seek(0)
+                                                buffer.truncate()  # Clear buffer to receive next chunk
                         
-                        with open("output.wav", "wb") as audio_file:
-                                while True:
-                                        try:
-                                                response = await websocket.recv()
-                                                self.play_audio(response) 
-                                        except websockets.exceptions.ConnectionClosed:
-                                                print("Streaming complete.")
-                                                break
+                                stream.stop()
+                        else:
+                                print(f"Error: {response.status_code}, {response.text}")
+
         @timed
         def text_to_speech(self, text):
                 """
