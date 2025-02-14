@@ -6,9 +6,6 @@ import subprocess
 import RPi.GPIO as GPIO
 import time
 from libraries.metrics import timed
-import asyncio
-import websockets
-import json
 import time
 import requests
 import numpy as np
