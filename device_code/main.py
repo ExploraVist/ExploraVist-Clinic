@@ -30,6 +30,8 @@ def main():
     default_prompt = "Describe what you see in front of you"
     context_window = "Context: \n"
 
+    api_key = "eb4f92cc97e5bb2057fc4bcb4d8ea1ddccb7b1ed"
+
     while(not restart):
         # In case of an interrupt, give some room so you don't immediately take another picture
         if api_handler.canceled == 1:
@@ -68,7 +70,7 @@ def main():
 
 
                 
-                api_handler.play_audio()
+                #api_handler.play_audio()
 
         elif time_pressed > 1.5:
             api_handler.play_audio("audio_files/popClick.wav") # Play Button Click Sound 
@@ -92,7 +94,7 @@ def main():
                 # Convert LLM Response to Audio
                 api_handler.stream_tts(text_response)
                 
-                api_handler.play_audio()
+               # api_handler.play_audio()
 
             elif button_pressed == 1: # Custom Prompt Only
                 # Speech to Text

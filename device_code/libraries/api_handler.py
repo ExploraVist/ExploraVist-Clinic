@@ -49,7 +49,7 @@ class APIHandler:
                 })
 
         @timed
-        def stream_text_to_speech(self, text, api_key, model="aura-asteria-en"):
+        def stream_tts(self, text, api_key, model="aura-asteria-en"):
                 """
                 Streams Deepgram's TTS audio and plays it in real-time.
                 """
