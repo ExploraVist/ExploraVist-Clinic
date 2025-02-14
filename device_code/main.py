@@ -114,7 +114,7 @@ def main():
                 api_handler.stream_tts(text_response)
                 
 
-                api_handler.play_audio()
+                #api_handler.play_audio()
             else:
                 continue
                 #print("waiting for input")
