@@ -12,6 +12,7 @@ import numpy as np
 import io
 from pydub import AudioSegment
 import sounddevice as sd
+import tempfile
 
 
 def encode_image(image_path):
@@ -46,7 +47,7 @@ class APIHandler:
         @timed
         def stream_tts(self, text, api_key, model="aura-asteria-en"):
                 """
-                Streams Deepgram's TTS audio and plays it in real-time.
+                Streams Deepgram's TTS audio and plays it in real-time using `aplay`.
                 """
                 url = f"https://api.deepgram.com/v1/speak?model={model}"
                 headers = {
@@ -55,45 +56,40 @@ class APIHandler:
                 }
                 data = {"text": text}
 
-                # Start streaming from the API
                 with requests.post(url, headers=headers, json=data, stream=True) as response:
                         if response.status_code == 200:
                                 content_type = response.headers.get('Content-Type', '')
 
-                                if 'audio/mpeg' in content_type:
-                                        format_type = "mp3"
-                                elif 'audio/wav' in content_type:
+                                if 'audio/wav' in content_type:
                                         format_type = "wav"
+                                elif 'audio/mpeg' in content_type:
+                                        format_type = "mp3"
                                 else:
                                         print("Error: Unexpected content type.")
                                         return
 
-                                # Process the audio in real-time
                                 buffer = io.BytesIO()
-                                stream = sd.OutputStream(dtype='int16')  # Create an audio stream
-                                stream.start()
 
-                                for chunk in response.iter_content(chunk_size=4096):  # Process small chunks
+                                for chunk in response.iter_content(chunk_size=4096):
                                         if chunk:
                                                 buffer.write(chunk)
-                                                buffer.seek(0)  # Reset position for decoding
+                                                buffer.seek(0)
 
-                                                # Decode chunk
+                                                # Convert chunk to WAV if necessary
                                                 if format_type == "mp3":
                                                         audio = AudioSegment.from_mp3(buffer)
                                                 else:
                                                         audio = AudioSegment.from_wav(buffer)
 
-                                                samples = np.array(audio.get_array_of_samples()).astype(np.float32)
-                                                samples /= np.max(np.abs(samples))  # Normalize audio
+                                                # Save to a temporary file
+                                                with tempfile.NamedTemporaryFile(delete=True, suffix=".wav") as temp_wav:
+                                                        audio.export(temp_wav.name, format="wav")
 
-                                                # Play the decoded chunk immediately
-                                                stream.write(samples)
-                                                
+                                                        # Play audio using aplay
+                                                        subprocess.run(["aplay", temp_wav.name])
+
                                                 buffer.seek(0)
-                                                buffer.truncate()  # Clear buffer to receive next chunk
-                        
-                                stream.stop()
+                                                buffer.truncate()
                         else:
                                 print(f"Error: {response.status_code}, {response.text}")
 
