@@ -363,6 +363,17 @@ class APIHandler:
                         print("GPT-4o-mini Response: ", response)
                         return response
                 return None
+        
+        def gpt_stream_request(self, transcript):
+                """
+                Performs GPT API Request with a custom prompt returning text response
+
+                Parameters:
+                        transcript (str): User prompt / transcript of user speech
+
+                Returns:
+                str: GPT text response if successful, None otherwise.
+                """
 
 
         def gpt_image_request(self, transcript, photo_path="images/temp_image.jpg"):
