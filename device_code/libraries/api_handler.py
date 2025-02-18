@@ -13,12 +13,47 @@ import io
 from pydub import AudioSegment
 import sounddevice as sd
 import tempfile
+import asyncio
+import websockets
+import json
+from pydub import AudioSegment
+import io
+import pyaudio
 
 
 def encode_image(image_path):
         with open(image_path, "rb") as image_file:
                 return base64.b64encode(image_file.read()).decode('utf-8')
 
+async def play_audio_stream(ws):
+    # Initialize PyAudio for real-time playback
+    p = pyaudio.PyAudio()
+
+    # Stream the audio in real-time
+    while True:
+        response = await ws.recv()
+        if response:
+            audio_data = json.loads(response)
+            
+            # Extract the audio data from the response
+            audio_chunk = audio_data.get("audio", None)
+            if audio_chunk:
+                audio_bytes = io.BytesIO(audio_chunk)  # Convert audio chunk to in-memory file
+                audio = AudioSegment.from_wav(audio_bytes)  # Convert the bytes to audio format
+
+                # Play the audio
+                stream = p.open(format=pyaudio.paInt16,
+                                channels=1,
+                                rate=audio.frame_rate,
+                                output=True)
+                stream.write(audio.raw_data)
+                stream.stop_stream()
+                stream.close()
+
+        else:
+            break
+
+    p.terminate()
 
 DEEPGRAM_TTS_URL = "wss://api.deepgram.com/v1/speak"
 
@@ -45,54 +80,20 @@ class APIHandler:
                 })
 
         @timed
-        def stream_tts(self, text, api_key, model="aura-asteria-en"):
-                """
-                Streams Deepgram's TTS audio and plays it in real-time using `aplay`.
-                """
-                url = f"https://api.deepgram.com/v1/speak?model={model}"
+        async def stream_tts(self, text, api_key, model="aura-asteria-en"):
+                url = f"wss://api.deepgram.com/v1/listen?model={model}"
                 headers = {
                         "Authorization": f"Token {api_key}",
                         "Content-Type": "application/json"
                 }
-                data = {"text": text}
-
-                with requests.post(url, headers=headers, json=data, stream=True) as response:
-                        if response.status_code == 200:
-                                content_type = response.headers.get('Content-Type', '')
-
-                                if 'audio/wav' in content_type:
-                                        format_type = "wav"
-                                elif 'audio/mpeg' in content_type:
-                                        format_type = "mp3"
-                                else:
-                                        print("Error: Unexpected content type.")
-                                        return
-
-                                buffer = io.BytesIO()
-
-                                for chunk in response.iter_content(chunk_size=4096):
-                                        if chunk:
-                                                buffer.write(chunk)
-                                                buffer.seek(0)
-
-                                                # Convert chunk to WAV if necessary
-                                                if format_type == "mp3":
-                                                        audio = AudioSegment.from_mp3(buffer)
-                                                else:
-                                                        audio = AudioSegment.from_wav(buffer)
-
-                                                # Save to a temporary file
-                                                with tempfile.NamedTemporaryFile(delete=True, suffix=".wav") as temp_wav:
-                                                        audio.export(temp_wav.name, format="wav")
-
-                                                        # Play audio using aplay
-                                                        subprocess.run(["aplay", temp_wav.name])
-
-                                                buffer.seek(0)
-                                                buffer.truncate()
-                        else:
-                                print(f"Error: {response.status_code}, {response.text}")
-
+                
+                async with websockets.connect(url, extra_headers=headers) as ws:
+                        # Send the text to be converted to speech
+                        request = json.dumps({"text": text})
+                        await ws.send(request)
+                        
+                        # Start playing the audio stream
+                        await play_audio_stream(ws)
         @timed
         def text_to_speech(self, text):
                 """
