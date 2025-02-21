@@ -6,6 +6,7 @@ from libraries.config import config
 import libraries.config
 import time
 import threading
+import pyttsx3
 
     
 
@@ -30,7 +31,13 @@ def main():
     default_prompt = "Describe what you see in front of you"
     context_window = "Context: \n"
 
-    api_key = "eb4f92cc97e5bb2057fc4bcb4d8ea1ddccb7b1ed"
+
+    # Initialize the text-to-speech engine
+    engine = pyttsx3.init()
+
+    # Set properties (optional)
+    engine.setProperty('rate', 150)  # Speed of speech
+    engine.setProperty('volume', 1)   # Volume level (0.0 to 1.0)
 
     while(not restart):
         # In case of an interrupt, give some room so you don't immediately take another picture
@@ -66,11 +73,8 @@ def main():
                 text_response = api_handler.gpt_image_request(temp_prompt)
                 context_window += f"USER: {default_prompt} \n GPT: {text_response} \n"
                 # Convert LLM Response to Audio
-                api_handler.stream_tts(text_response,api_key)
+                api_handler.stream_tts(text_response,engine)
 
-
-                
-                #api_handler.play_audio()
 
         elif time_pressed > 1.5:
             api_handler.play_audio("audio_files/popClick.wav") # Play Button Click Sound 
@@ -92,9 +96,9 @@ def main():
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
                 # Convert LLM Response to Audio
-                api_handler.stream_tts(text_response,api_key)
+                api_handler.stream_tts(text_response,engine)
                 
-               # api_handler.play_audio()
+            
 
             elif button_pressed == 1: # Custom Prompt Only
                 # Speech to Text
@@ -111,10 +115,8 @@ def main():
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
                 # Convert LLM Response to Audio
-                api_handler.stream_tts(text_response,api_key)
+                api_handler.stream_tts(text_response,engine)
                 
-
-                #api_handler.play_audio()
             else:
                 continue
                 #print("waiting for input")

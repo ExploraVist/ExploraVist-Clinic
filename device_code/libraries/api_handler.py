@@ -20,11 +20,13 @@ from pydub import AudioSegment
 import io
 import pyaudio
 import logging
+import pyttsx3
 
 
 def encode_image(image_path):
         with open(image_path, "rb") as image_file:
                 return base64.b64encode(image_file.read()).decode('utf-8')
+
 
 
 
@@ -103,19 +105,37 @@ class APIHandler:
 
         @timed
         async def stream_tts(self, text, api_key, model="aura-asteria-en"):
+
                 url = f"wss://api.deepgram.com/v1/listen?model={model}"
                 headers = {
                         "Authorization": f"Token {api_key}",
                         "Content-Type": "application/json"
                 }
-                
-                async with websockets.connect(url, extra_headers=headers) as ws:
-                        # Send the text to be converted to speech
-                        request = json.dumps({"text": text})
-                        await ws.send(request)
-                        
-                        # Start playing the audio stream
-                        await play_audio_stream(ws)
+
+                try:
+                        async with websockets.connect(url, extra_headers=headers) as ws:
+                                
+                                # Send the text to be converted to speech
+                                request = json.dumps({"text": text})
+                                await ws.send(request)
+                                print("Sent text to Deepgram API")  # Debugging output
+                                
+                                # Start playing the audio stream
+                                await play_audio_stream(ws)
+
+                except Exception as e:
+                        print(f"Error in stream_tts: {e}")
+
+
+        
+
+        @timed
+        async def stream_tts(text,engine):
+                while True: 
+                        engine.say(text)
+                        engine.runAndWait()  # This will block until the speech is finished
+
+
         @timed
         def text_to_speech(self, text):
                 """

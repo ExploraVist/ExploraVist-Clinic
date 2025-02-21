@@ -7,7 +7,7 @@ def ensure_directory_exists(filename):
     """Create directory for the file if it doesn't exist"""
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
-def timed(func):
+async def timed(func):
     """
     A decorator that logs function execution timing data to a CSV file.
     Each function call creates a new row with timing information.
@@ -33,3 +33,6 @@ def timed(func):
         print(f"{func.__name__} took {duration:.2f} seconds.")
         return result
     return wrapper
+
+
+    
