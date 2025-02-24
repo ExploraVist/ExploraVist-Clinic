@@ -20,7 +20,7 @@ from pydub import AudioSegment
 import io
 import pyaudio
 import logging
-import pyttsx3
+
 
 
 def encode_image(image_path):
@@ -60,13 +60,7 @@ class APIHandler:
                 })
 
 
-        
 
-        @timed
-        def stream_tts(text,engine):
-                while True: 
-                        engine.say(text)
-                        engine.runAndWait()  # This will block until the speech is finished
 
 
         @timed
