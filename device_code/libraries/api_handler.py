@@ -18,8 +18,11 @@ import websockets
 import json
 from pydub import AudioSegment
 import io
-import pyaudio
 import logging
+import numpy as np
+import sounddevice as sd
+from TTS.utils.generic_utils import download_model
+from TTS.tts.utils import setup_model
 
 
 
@@ -60,7 +63,22 @@ class APIHandler:
                 })
 
 
+     
+        @timed
+        def stream_tts(self,text):
+                # Download and load the pre-trained TTS model (if not already downloaded)
+                model_path = download_model('tts_models/en/ljspeech/glow-tts')
+                tts = setup_model(model_path)
+                
+                # Generate the mel spectrogram from the input text
+                mel_spectrogram = tts.text_to_mel(text)
 
+                # Synthesize audio from the mel spectrogram
+                audio = tts.mel_to_audio(mel_spectrogram)
+
+                # Play the audio
+                sd.play(audio, samplerate=22050)
+                sd.wait()  # Wait until audio is finished playing
 
 
         @timed

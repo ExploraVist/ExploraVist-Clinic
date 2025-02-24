@@ -72,12 +72,9 @@ def main():
                 # Make LLM API Call
                 text_response = api_handler.gpt_image_request(temp_prompt)
                 context_window += f"USER: {default_prompt} \n GPT: {text_response} \n"
+
                 # Convert LLM Response to Audio
-                
-                engine.say(text_response)
-                engine.runAndWait()  
-                # This will block until the speech is finished
-                #api_handler.stream_tts(text_response,engine)
+                api_handler.stream_tts(text_response)
 
 
         elif time_pressed > 1.5:
@@ -99,11 +96,7 @@ def main():
                 text_response = api_handler.gpt_image_request(temp_prompt)
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
-
-                engine.say(text_response)
-                engine.runAndWait()  
-                # Convert LLM Response to Audio
-                #api_handler.stream_tts(text_response,engine)
+                api_handler.stream_tts(text_response)
                 
             
 
@@ -121,10 +114,7 @@ def main():
                 text_response = api_handler.gpt_request(temp_prompt)
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
-                engine.say(text_response)
-                engine.runAndWait()  
-                # Convert LLM Response to Audio
-                #api_handler.stream_tts(text_response,engine)
+                api_handler.stream_tts(text_response)
                 
             else:
                 continue
