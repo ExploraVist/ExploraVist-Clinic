@@ -63,7 +63,7 @@ class APIHandler:
         
 
         @timed
-        async def stream_tts(text,engine):
+        def stream_tts(text,engine):
                 while True: 
                         engine.say(text)
                         engine.runAndWait()  # This will block until the speech is finished
