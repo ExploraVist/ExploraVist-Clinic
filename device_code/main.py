@@ -73,7 +73,7 @@ def main():
                 text_response = api_handler.gpt_image_request(temp_prompt)
                 context_window += f"USER: {default_prompt} \n GPT: {text_response} \n"
                 # Convert LLM Response to Audio
-                api_handler.stream_tts(text_response,engine)
+                #api_handler.stream_tts(text_response,engine)
 
 
         elif time_pressed > 1.5:
@@ -96,7 +96,7 @@ def main():
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
                 # Convert LLM Response to Audio
-                api_handler.stream_tts(text_response,engine)
+                #api_handler.stream_tts(text_response,engine)
                 
             
 
@@ -115,7 +115,7 @@ def main():
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
                 # Convert LLM Response to Audio
-                api_handler.stream_tts(text_response,engine)
+                #api_handler.stream_tts(text_response,engine)
                 
             else:
                 continue
