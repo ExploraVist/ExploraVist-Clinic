@@ -66,8 +66,8 @@ def main():
                 temp_prompt = context_window + f"Current Question: {default_prompt} \n"
 
                 # Start filler sound in a separate thread
-                filler_thread = threading.Thread(target=api_handler.play_audio, args=("audio_files/filler_sound.wav",))
-                filler_thread.start()
+              # filler_thread = threading.Thread(target=api_handler.play_audio, args=("audio_files/filler_sound.wav",))
+              # filler_thread.start()
 
                 # Make LLM API Call
                 text_response = api_handler.gpt_image_request(temp_prompt)
@@ -87,8 +87,8 @@ def main():
                 temp_prompt = context_window + f"Current Question: {transcript} \n"
 
                 # Play a filler while it processes
-                filler_thread = threading.Thread(target=api_handler.play_audio, args=("audio_files/filler_sound.wav",))
-                filler_thread.start()
+              #  filler_thread = threading.Thread(target=api_handler.play_audio, args=("audio_files/filler_sound.wav",))
+              #  filler_thread.start()
 
 
                 # Make LLM API Call with Custom Prompt
@@ -106,8 +106,8 @@ def main():
                 temp_prompt = context_window + f"Current Question: {transcript} \n"
 
                 # Play a filler while it processes
-                filler_thread = threading.Thread(target=api_handler.play_audio, args=("audio_files/filler_sound.wav",))
-                filler_thread.start()
+             #   filler_thread = threading.Thread(target=api_handler.play_audio, args=("audio_files/filler_sound.wav",))
+             #   filler_thread.start()
 
 
                 # Make LLM API Call with Custom Prompt
