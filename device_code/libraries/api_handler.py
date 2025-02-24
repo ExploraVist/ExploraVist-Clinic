@@ -32,51 +32,7 @@ def encode_image(image_path):
 
 logging.basicConfig(level=logging.DEBUG)  # Set up basic logging
 
-async def play_audio_stream(ws):
-    p = pyaudio.PyAudio()
 
-    while True:
-        response = await ws.recv()
-        
-        # Log the response to see what's coming from the WebSocket
-        logging.debug(f"Received response: {response}")
-
-        if response:
-            try:
-                # Attempt to parse the JSON response
-                audio_data = json.loads(response)
-                logging.debug(f"Decoded audio data: {audio_data}")
-
-                # Extract the audio chunk
-                audio_chunk = audio_data.get("audio", None)
-                if audio_chunk:
-                    logging.debug(f"Extracted audio chunk with length: {len(audio_chunk)} bytes")
-                    
-                    # Convert audio chunk to in-memory file
-                    audio_bytes = io.BytesIO(audio_chunk)
-                    
-                    # Attempt to load the audio from the bytes
-                    audio = AudioSegment.from_wav(audio_bytes)
-                    logging.debug(f"Audio loaded successfully with {audio.frame_rate} Hz and {audio.frame_width} bytes per frame")
-
-                    # Play the audio
-                    stream = p.open(format=pyaudio.paInt16,
-                                    channels=1,
-                                    rate=audio.frame_rate,
-                                    output=True)
-                    logging.debug("Streaming audio...")
-                    stream.write(audio.raw_data)
-                    stream.stop_stream()
-                    stream.close()
-                else:
-                    logging.error("No audio chunk found in the response.")
-            except Exception as e:
-                logging.error(f"Error processing audio: {e}")
-        else:
-            logging.info("No more responses received, breaking loop.")
-            break
-
-    p.terminate()
 
 
 DEEPGRAM_TTS_URL = "wss://api.deepgram.com/v1/speak"
@@ -102,29 +58,6 @@ class APIHandler:
                         "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
                         "Content-Type": "text/plain"
                 })
-
-        @timed
-        async def stream_tts(self, text, api_key, model="aura-asteria-en"):
-
-                url = f"wss://api.deepgram.com/v1/listen?model={model}"
-                headers = {
-                        "Authorization": f"Token {api_key}",
-                        "Content-Type": "application/json"
-                }
-
-                try:
-                        async with websockets.connect(url, extra_headers=headers) as ws:
-                                
-                                # Send the text to be converted to speech
-                                request = json.dumps({"text": text})
-                                await ws.send(request)
-                                print("Sent text to Deepgram API")  # Debugging output
-                                
-                                # Start playing the audio stream
-                                await play_audio_stream(ws)
-
-                except Exception as e:
-                        print(f"Error in stream_tts: {e}")
 
 
         
