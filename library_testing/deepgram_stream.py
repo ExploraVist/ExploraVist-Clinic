@@ -23,7 +23,7 @@ def segment_text_by_sentence(text):
 
     return segments
 
-def synthesize_audio(text):
+def synthesize_audio(text, output_file="output_audio.wav"):
     payload = {"text": text}
     with requests.post(DEEPGRAM_URL, stream=True, headers=headers, json=payload) as r:
         # Open a subprocess to pipe audio data to aplay with specified format
@@ -32,10 +32,13 @@ def synthesize_audio(text):
             stdin=subprocess.PIPE
         )
         try:
-            for chunk in r.iter_content(chunk_size=1024):
-                if chunk:
-                    # Write the audio chunk to aplay's stdin
-                    aplay_process.stdin.write(chunk)
+            with open(output_file, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=1024):
+                    if chunk:
+                        # Write the audio chunk to aplay's stdin
+                        aplay_process.stdin.write(chunk)
+                        # Also write the audio chunk to a file
+                        f.write(chunk)
         finally:
             # Ensure the aplay process is properly terminated
             aplay_process.stdin.close()
@@ -44,10 +47,11 @@ def synthesize_audio(text):
 def main():
     segments = segment_text_by_sentence(input_text)
 
-    for segment_text in segments:
-        synthesize_audio(segment_text)
+    for i, segment_text in enumerate(segments):
+        output_file = f"output_audio_segment_{i}.wav"
+        synthesize_audio(segment_text, output_file)
 
-    print("Audio playback completed.")
+    print("Audio playback and file writing completed.")
 
 if __name__ == "__main__":
     main()
