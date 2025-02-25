@@ -6,7 +6,7 @@ import config
 
 DEEPGRAM_API_KEY = config["DEEPGRAM_API_KEY"]
 
-DEEPGRAM_URL = "https://api.deepgram.com/v1/speak"
+DEEPGRAM_URL = "https://api.deepgram.com/v1/speak?model=aura-asteria-en"
 headers = {
     "Authorization": f"Token {DEEPGRAM_API_KEY}",
     "Content-Type": "application/json"
@@ -27,43 +27,42 @@ def segment_text_by_sentence(text):
 
     return segments
 
-def synthesize_audio(text, output_file="output_audio.wav"):
+def synthesize_audio(text):
     payload = {
         "text": text,
-        "encoding": "linear16",
-        "sample_rate": 16000
+        "encoding": "linear16",  # Specify PCM output
+        "sample_rate": 16000     # Specify the sample rate
     }
-    with requests.post(DEEPGRAM_URL, stream=True, headers=headers, json=payload) as r:
-        if r.status_code != 200:
-            print(f"Error: Received status code {r.status_code}")
-            return
-        
-        # Open a subprocess to pipe audio data to aplay with specified format
-        aplay_process = subprocess.Popen(
-            ['aplay', '-f', 'S16_LE', '-r', '16000', '-c', '1', '-'],
-            stdin=subprocess.PIPE
-        )
-        try:
-            with open(output_file, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=1024):
-                    if chunk:
-                        # Write the audio chunk to aplay's stdin
-                        aplay_process.stdin.write(chunk)
-                        # Also write the audio chunk to a file
-                        f.write(chunk)
-        finally:
-            # Ensure the aplay process is properly terminated
-            aplay_process.stdin.close()
-            aplay_process.wait()
+
+    response = requests.post(DEEPGRAM_URL, headers=headers, json=payload, stream=True)
+    
+    if response.status_code != 200:
+        print(f"Error: Received status code {response.status_code}")
+        print(f"Response: {response.text}")
+        return
+
+    # Open a subprocess to pipe audio data to aplay with specified format
+    aplay_process = subprocess.Popen(
+        ['aplay', '-f', 'S16_LE', '-r', '16000', '-c', '1', '-'],
+        stdin=subprocess.PIPE
+    )
+    try:
+        for chunk in response.iter_content(chunk_size=1024):
+            if chunk:
+                # Write the audio chunk to aplay's stdin
+                aplay_process.stdin.write(chunk)
+    finally:
+        # Ensure the aplay process is properly terminated
+        aplay_process.stdin.close()
+        aplay_process.wait()
 
 def main():
     segments = segment_text_by_sentence(input_text)
 
     for i, segment_text in enumerate(segments):
-        output_file = f"output_audio_segment_{i}.wav"
-        synthesize_audio(segment_text, output_file)
+        synthesize_audio(segment_text)
 
-    print("Audio playback and file writing completed.")
+    print("Audio playback completed.")
 
 if __name__ == "__main__":
     main()
