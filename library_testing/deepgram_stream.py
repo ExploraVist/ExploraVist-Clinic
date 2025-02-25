@@ -26,8 +26,11 @@ def segment_text_by_sentence(text):
 def synthesize_audio(text):
     payload = {"text": text}
     with requests.post(DEEPGRAM_URL, stream=True, headers=headers, json=payload) as r:
-        # Open a subprocess to pipe audio data to aplay
-        aplay_process = subprocess.Popen(['aplay', '-'], stdin=subprocess.PIPE)
+        # Open a subprocess to pipe audio data to aplay with specified format
+        aplay_process = subprocess.Popen(
+            ['aplay', '-f', 'S16_LE', '-r', '16000', '-c', '1', '-'],
+            stdin=subprocess.PIPE
+        )
         try:
             for chunk in r.iter_content(chunk_size=1024):
                 if chunk:
