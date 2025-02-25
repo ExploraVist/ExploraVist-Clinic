@@ -1,18 +1,13 @@
 import re
 import requests
-import subprocess
-import config
 
-
-DEEPGRAM_API_KEY = config["DEEPGRAM_API_KEY"]
-
-DEEPGRAM_URL = "https://api.deepgram.com/v1/speak?model=aura-asteria-en"
+DEEPGRAM_URL = 'https://api.deepgram.com/v1/speak?model=aura-helios-en'
 headers = {
-    "Authorization": f"Token {DEEPGRAM_API_KEY}",
+    "Authorization": "Token DEEPGRAM_API_KEY",
     "Content-Type": "application/json"
 }
 
-input_text = "Our story begins in a peaceful woodland kingdom where a lively squirrel named Frolic made his abode high up within a cedar tree's embrace. He was not a usual woodland creature, for he was blessed with an insatiable curiosity and a heart for adventure. Nearby, a glistening river snaked through the landscape, home to a wonder named Splash - a silver-scaled flying fish whose ability to break free from his water-haven intrigued the woodland onlookers. This magical world moved on a rhythm of its own until an unforeseen circumstance brought Frolic and Splash together. One radiant morning, while Frolic was on his regular excursion, and Splash was making his aerial tours, an unpredictable wave playfully tossed and misplaced Splash onto the riverbank. Despite his initial astonishment, Frolic hurriedly and kindly assisted his new friend back to his watery abode. Touched by Frolic's compassion, Splash expressed his gratitude by inviting his friend to share his world. As Splash perched on Frolic's back, he tasted of the forest's bounty, felt the sun's rays filter through the colors of the trees, experienced the conversations amidst the woods, and while at it, taught the woodland how to blur the lines between earth and water."
+input_text = "Our story begins in a peaceful woodland kingdom where a lively squirrel named Frolic made his abode high up within a cedar tree's embrace. He was not a usual woodland creature, for he was blessed with an insatiable curiosity and a heart for adventure. Nearby, a glistening river snaked through the landscape, home to a wonder named Splash - a silver-scaled flying fish whose ability to break free from his water-haven intrigued the woodland onlookers. This magical world moved on a rhythm of its own until an unforeseen circumstance brought Frolic and Splash together. One radiant morning, while Frolic was on his regular excursion, and Splash was making his aerial tours, an unpredictable wave playfully tossed and misplaced Splash onto the riverbank. Despite his initial astonishment, Frolic hurriedly and kindly assisted his new friend back to his watery abode. Touched by Frolic's compassion, Splash expressed his gratitude by inviting his friend to share his world. As Splash perched on Frolic's back, he tasted of the forest's bounty, felt the sun’s rays filter through the colors of the trees, experienced the conversations amidst the woods, and while at it, taught the woodland how to blur the lines between earth and water."
 
 def segment_text_by_sentence(text):
     sentence_boundaries = re.finditer(r'(?<=[.!?])\s+', text)
@@ -27,42 +22,22 @@ def segment_text_by_sentence(text):
 
     return segments
 
-def synthesize_audio(text):
-    payload = {
-        "text": text,
-        "encoding": "linear16",  # Specify PCM output
-        "sample_rate": 16000     # Specify the sample rate
-    }
-
-    response = requests.post(DEEPGRAM_URL, headers=headers, json=payload, stream=True)
-    
-    if response.status_code != 200:
-        print(f"Error: Received status code {response.status_code}")
-        print(f"Response: {response.text}")
-        return
-
-    # Open a subprocess to pipe audio data to aplay with specified format
-    aplay_process = subprocess.Popen(
-        ['aplay', '-f', 'S16_LE', '-r', '16000', '-c', '1', '-'],
-        stdin=subprocess.PIPE
-    )
-    try:
-        for chunk in response.iter_content(chunk_size=1024):
+def synthesize_audio(text, output_file):
+    payload = {"text": text}
+    with requests.post(DEEPGRAM_URL, stream=True, headers=headers, json=payload) as r:
+        for chunk in r.iter_content(chunk_size=1024):
             if chunk:
-                # Write the audio chunk to aplay's stdin
-                aplay_process.stdin.write(chunk)
-    finally:
-        # Ensure the aplay process is properly terminated
-        aplay_process.stdin.close()
-        aplay_process.wait()
+                output_file.write(chunk)
 
 def main():
     segments = segment_text_by_sentence(input_text)
 
-    for i, segment_text in enumerate(segments):
-        synthesize_audio(segment_text)
+    # Create or truncate the output file
+    with open("output.mp3", "wb") as output_file:
+        for segment_text in segments:
+            synthesize_audio(segment_text, output_file)
 
-    print("Audio playback completed.")
+    print("Audio file creation completed.")
 
 if __name__ == "__main__":
     main()
