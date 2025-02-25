@@ -1,10 +1,14 @@
 import re
 import requests
 import subprocess
+import config
+
+
+DEEPGRAM_API_KEY = config["DEEPGRAM_API_KEY"]
 
 DEEPGRAM_URL = 'https://api.deepgram.com/v1/speak?model=aura-helios-en'
 headers = {
-    "Authorization": "Token DEEPGRAM_API_KEY",
+    "Authorization": f"Token {DEEPGRAM_API_KEY}",
     "Content-Type": "application/json"
 }
 
