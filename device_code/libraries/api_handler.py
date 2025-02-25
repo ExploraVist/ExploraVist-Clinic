@@ -79,7 +79,37 @@ class APIHandler:
                 # Play the audio
                 sd.play(audio, samplerate=22050)
                 sd.wait()  # Wait until audio is finished playing
+        
+        
+        
+        async def stream_audio(self, text):
+                """Fetch audio from Deepgram API and play it in real-time using aplay."""
+                async with websockets.connect(
+                        f"{DEEPGRAM_URL}?access_token={API_KEY}"
+                ) as websocket:
 
+                        # Start ffmpeg to convert stream to raw PCM and pipe to aplay
+                        ffmpeg_process = subprocess.Popen(
+                        ["ffmpeg", "-i", "pipe:0", "-f", "wav", "-ar", "44100", "-ac", "2", "-"],
+                        stdin=subprocess.PIPE,
+                        stdout=subprocess.PIPE
+                        )
+
+                        aplay_process = subprocess.Popen(
+                        ["aplay", "-D", "default", "-r", "44100", "-f", "S16_LE", "-c", "2"],
+                        stdin=ffmpeg_process.stdout
+                        )
+
+                        try:
+                        async for audio_data in websocket:
+                                ffmpeg_process.stdin.write(audio_data)
+                                ffmpeg_process.stdin.flush()
+                        except Exception as e:
+                        print(f"Error: {e}")
+                        finally:
+                        ffmpeg_process.stdin.close()
+                        ffmpeg_process.wait()
+                        aplay_process.terminate()
 
         @timed
         def text_to_speech(self, text):
