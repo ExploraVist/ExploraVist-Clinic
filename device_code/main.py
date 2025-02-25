@@ -5,7 +5,9 @@ import RPi.GPIO as GPIO  # Import Raspberry Pi GPIO library
 from libraries.config import config
 import libraries.config
 import time
+import subprocess
 
+process = subprocess.Popen(["aplay", "-D", "default", "-r", "44100", "-f", "S16_LE", "-c", "2", "/dev/zero"]) # play nearaly inaudible sound to avoid pop-clicking
 
 def main():
     # Initialize classes
