@@ -6,7 +6,7 @@ import config
 
 DEEPGRAM_API_KEY = config["DEEPGRAM_API_KEY"]
 
-DEEPGRAM_URL = 'https://api.deepgram.com/v1/speak?model=aura-helios-en'
+DEEPGRAM_URL = "https://api.deepgram.com/v1/speak"
 headers = {
     "Authorization": f"Token {DEEPGRAM_API_KEY}",
     "Content-Type": "application/json"
@@ -28,8 +28,16 @@ def segment_text_by_sentence(text):
     return segments
 
 def synthesize_audio(text, output_file="output_audio.wav"):
-    payload = {"text": text}
+    payload = {
+        "text": text,
+        "encoding": "linear16",
+        "sample_rate": 16000
+    }
     with requests.post(DEEPGRAM_URL, stream=True, headers=headers, json=payload) as r:
+        if r.status_code != 200:
+            print(f"Error: Received status code {r.status_code}")
+            return
+        
         # Open a subprocess to pipe audio data to aplay with specified format
         aplay_process = subprocess.Popen(
             ['aplay', '-f', 'S16_LE', '-r', '16000', '-c', '1', '-'],
