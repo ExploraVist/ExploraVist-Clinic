@@ -64,6 +64,7 @@ def main():
                 text_response = api_handler.gpt_image_request(temp_prompt)
                 context_window += f"USER: {default_prompt} \n GPT: {text_response} \n"
                 # Convert LLM Response to Audio
+
                 end = time.time()
                 #api_handler.stream_tts(text_response)
                 api_handler.stream_tts_and_play(text_response)
@@ -71,6 +72,9 @@ def main():
                 print (end, begin, end-begin)
                 
                 #api_handler.play_audio()
+
+                
+
 
         elif time_pressed > 1.5:
             if button_pressed == 2:   # Image with Custom Prompt
@@ -100,6 +104,10 @@ def main():
                 
                 #api_handler.play_audio()
 
+
+                api_handler.speak_and_play_tts(text_response)
+                
+
             elif button_pressed == 1: # Custom Prompt Only
                 # Speech to Text
                 transcript = api_handler.audio_to_text()
@@ -110,12 +118,13 @@ def main():
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
                 # Convert LLM Response to Audio
+
                 begin = time.time()
                 api_handler.stream_tts(text_response)
                 end = time.time()
                 print (end-begin)
+
                 
-                api_handler.play_audio()
             else:
                 continue
                 #print("waiting for input")

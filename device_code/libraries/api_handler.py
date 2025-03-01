@@ -15,6 +15,29 @@ def encode_image(image_path):
         with open(image_path, "rb") as image_file:
                 return base64.b64encode(image_file.read()).decode('utf-8')
 
+def segment_text_by_sentence(text):
+    """
+    Splits `text` into segments (sentences) by looking for punctuation followed by whitespace.
+    """
+    sentence_boundaries = re.finditer(r'(?<=[.!?])\s+', text)
+    boundaries_indices = [boundary.start() for boundary in sentence_boundaries]
+    
+    segments = []
+    start = 0
+    for boundary_index in boundaries_indices:
+        segments.append(text[start:boundary_index + 1].strip())
+        start = boundary_index + 1
+    # Append the last segment
+    segments.append(text[start:].strip())
+
+    return segments
+
+
+DEEPGRAM_API_KEY = os.environ.get("DEEPGRAM_API_KEY", None)
+if not DEEPGRAM_API_KEY:
+    raise ValueError("Please set the DEEPGRAM_API_KEY environment variable.")
+
+
 class APIHandler:
     #TODO incorporate a requests.Session() for Keep-Alive, Ex:
     # self.session = requests.Session()  # Use a session for keep-alive
@@ -297,6 +320,8 @@ class APIHandler:
                 except requests.RequestException as e:
                         print(f"Single chunk failed: {e}")
 
+
+        @timed
         def audio_to_text(self, file_path="audio/audio.wav"):
                 """
                         Transcribes audio to text using Deepgram's API.
