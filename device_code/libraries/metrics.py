@@ -1,34 +1,35 @@
 import time
+import csv
+import os
+from functools import wraps
+
+def ensure_directory_exists(filename):
+    """Create directory for the file if it doesn't exist"""
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
 
 def timed(func):
     """
-    A decorator that measures and prints the execution time of a function.
-
-    This decorator wraps a function, recording the time before and after it executes.
-    It then calculates and prints the elapsed time in seconds. This can be useful 
-    for performance monitoring, especially for functions that make API calls or 
-    perform other time-consuming tasks.
-
-    Parameters:
-        func (callable): The function to be timed.
-
-    Returns:
-        callable: The wrapped function with added timing functionality.
-
-    Usage:
-        Apply this decorator to any function you want to time. For example:
-        
-        @timed
-        def my_function():
-            # Function logic here
-
-        When `my_function()` is called, it will execute normally, and the decorator
-        will print the time taken for the execution.
+    A decorator that logs function execution timing data to a CSV file.
+    Each function call creates a new row with timing information.
     """
+    @wraps(func)
     def wrapper(*args, **kwargs):
         start_time = time.time()
         result = func(*args, **kwargs)
-        elapsed_time = time.time() - start_time
-        print(f"{func.__name__} took {elapsed_time:.2f} seconds.")
+        end_time = time.time()
+        duration = end_time - start_time
+        
+        # Append timing data to CSV
+        filename = 'data_log/timing_results.csv'
+        ensure_directory_exists(filename)
+        
+        file_exists = os.path.exists(filename)
+        with open(filename, 'a', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            if not file_exists:
+                writer.writerow(['function_name', 'start_time', 'end_time', 'duration'])
+            writer.writerow([func.__name__, start_time, end_time, duration])
+        
+        print(f"{func.__name__} took {duration:.2f} seconds.")
         return result
     return wrapper
