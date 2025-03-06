@@ -21,8 +21,8 @@ def main():
 
     # Set pin 22 to pull up (normally closed)
     GPIO.setup(22, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    # Set pin 27 to pul up (normally closed)
-    GPIO.setup(27, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    # Set pin 23 to pul up (normally closed)
+    GPIO.setup(23, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
     restart = 0 #TODO implement an exit/restart mechanism
     default_prompt = "Describe what you see in front of you"
@@ -36,11 +36,11 @@ def main():
         button_pressed = 0
 
         start_time = time.time()
-        while GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:
+        while GPIO.input(22) == GPIO.LOW or GPIO.input(23) == GPIO.LOW:
             device.start_recording()
             if GPIO.input(22) == GPIO.LOW:
                 button_pressed = 2
-            elif GPIO.input(27) == GPIO.LOW:
+            elif GPIO.input(23) == GPIO.LOW:
                 button_pressed = 1
 
         device.stop_recording()
