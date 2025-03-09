@@ -25,7 +25,7 @@ def main():
     GPIO.setup(27, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
     restart = 0 #TODO implement an exit/restart mechanism
-    default_prompt = "Assume I am blind. describe what you see in front of you. Be as detailed as you can."
+    default_prompt = "Assume I am blind. describe what you see in front of you. Be as detailed as you can. If the image does not look upright, please rotate it until it is and analyze it that way."
     context_window = "Context: \n"
 
     while(not restart):
@@ -67,7 +67,7 @@ def main():
 
                 # Speech to Text
                 transcript = api_handler.audio_to_text()
-                temp_prompt = context_window + f"Current Question: Assume I am blind... {transcript}. \n"
+                temp_prompt = context_window + f"Current Question: Assume I am blind... {transcript}. If the image does not look upright, please rotate it and analyze it as such \n"
 
                 # Make LLM API Call with Custom Prompt
                 text_response = api_handler.gpt_image_request(temp_prompt)
