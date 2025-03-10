@@ -33,7 +33,7 @@ def segment_text_by_sentence(text):
     return segments
 
 
-DEEPGRAM_API_KEY = os.environ.get("DEEPGRAM_API_KEY", None)
+DEEPGRAM_API_KEY = "3d85ba05e27a54d04228f61d2b231c97d00b926a"
 if not DEEPGRAM_API_KEY:
     raise ValueError("Please set the DEEPGRAM_API_KEY environment variable.")
 
