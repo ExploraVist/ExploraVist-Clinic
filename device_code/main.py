@@ -51,6 +51,7 @@ def main():
             if button_pressed == 2:
                 # Take image
                 device.capture_image()
+                device.show_image()
                 temp_prompt = context_window + f"Current Question: {default_prompt} \n"
                 # Make LLM API Call
                 text_response = api_handler.gpt_image_request(temp_prompt)
