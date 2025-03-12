@@ -8,7 +8,6 @@ from picamera2 import Picamera2
 from picamera2.previews import QtGlPreview
 from libraries.metrics import timed
 from PIL import Image
-import cv2
 
 class MediaDeviceManager:
     def __init__(self):
@@ -113,13 +112,11 @@ class MediaDeviceManager:
         # Capture an image with the Picamera2
         self.camera.capture_file(filename)
         print(f"Image captured as {filename}")
-
+    
     def show_image(image_path):
-        """Display the captured image using OpenCV."""
-        img = cv2.imread(image_path)  # Load the image
-        cv2.imshow('Captured Image', img)  # Show image in a window
-        cv2.waitKey(0)  # Wait until a key is pressed
-        cv2.destroyAllWindows()  # Close the window
+        """Display the captured image using the default image viewer."""
+        img = Image.open(image_path)
+        img.show() 
 
     def close(self):
         # Clean up resources
