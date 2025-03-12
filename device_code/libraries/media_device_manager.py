@@ -113,9 +113,9 @@ class MediaDeviceManager:
         self.camera.capture_file(filename)
         print(f"Image captured as {filename}")
     
-    def show_image(image_path):
-        """Display the captured image using 'eog' (Eye of GNOME)."""
-        os.system(f"eog {image_path}")
+    def show_image(self, filename="images/temp_image.jpg"):
+        """Display the captured image using the default viewer."""
+        os.system(f"xdg-open {filename} &")
 
     def close(self):
         # Clean up resources
