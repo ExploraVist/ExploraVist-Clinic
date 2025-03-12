@@ -65,6 +65,7 @@ def main():
             if button_pressed == 2:   # Image with Custom Prompt
                 # Take image
                 device.capture_image()
+                device.show_image()
 
                 # Speech to Text
                 transcript = api_handler.audio_to_text()
