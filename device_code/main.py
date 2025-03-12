@@ -27,7 +27,7 @@ def main():
     GPIO.setup(27, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
     # Shutdown Pin on Amplifier
-    AMP_SD_PIN = 22
+    AMP_SD_PIN = 26
     GPIO.setup(AMP_SD_PIN, GPIO.OUT)
     GPIO.output(AMP_SD_PIN, GPIO.LOW);
 
