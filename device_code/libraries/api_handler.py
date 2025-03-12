@@ -5,15 +5,21 @@ import requests
 import subprocess
 import RPi.GPIO as GPIO
 import time
+
 import re
 from pathlib import Path
 import threading
 import queue
 import time
 
+from libraries.metrics import timed
+import re
+
 def encode_image(image_path):
         with open(image_path, "rb") as image_file:
                 return base64.b64encode(image_file.read()).decode('utf-8')
+
+
 
 def segment_text_by_sentence(text):
     """
