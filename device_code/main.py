@@ -89,7 +89,8 @@ def main():
 
                 # Check that pin is low
                 check_gpio_state(GPIO.HIGH,AMP_SD_PIN)
-                
+                time.sleep(2) 
+
                 # Convert LLM Response to Audio
 
                 end = time.time()
@@ -127,9 +128,11 @@ def main():
 
                 # Turn On Speaker
                 GPIO.output(AMP_SD_PIN, GPIO.HIGH)
+                
 
                 # Check that pin is low
                 check_gpio_state(GPIO.HIGH,AMP_SD_PIN)
+                time.sleep(2) 
 
                 # Convert LLM Response to Audio
                 end = time.time()
@@ -161,6 +164,7 @@ def main():
 
                 # Check that pin is low
                 check_gpio_state(GPIO.HIGH,AMP_SD_PIN)
+                time.sleep(2) 
 
                 # Convert LLM Response to Audio
 
