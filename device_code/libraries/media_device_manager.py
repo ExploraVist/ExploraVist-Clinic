@@ -8,7 +8,6 @@ from picamera2 import Picamera2
 from picamera2.previews import QtGlPreview
 from libraries.metrics import timed
 from PIL import Image
-import matplotlib.pyplot as plt
 
 class MediaDeviceManager:
     def __init__(self):
@@ -114,12 +113,10 @@ class MediaDeviceManager:
         self.camera.capture_file(filename)
         print(f"Image captured as {filename}")
     
-    def show_image(self, filename="images/temp_image.jpg"):
-        """Display the captured image."""
-        img = Image.open(filename)
-        plt.imshow(img)
-        plt.axis('off')  # Hide axes
-        plt.show()
+    def show_image(image_path):
+        """Display the captured image using the default image viewer."""
+        img = Image.open(image_path)
+        img.show() 
 
     def close(self):
         # Clean up resources
