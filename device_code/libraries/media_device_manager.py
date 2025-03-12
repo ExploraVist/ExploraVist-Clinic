@@ -7,7 +7,7 @@ import numpy as np
 from picamera2 import Picamera2
 from picamera2.previews import QtGlPreview
 from libraries.metrics import timed
-from PIL import Image
+import os
 
 class MediaDeviceManager:
     def __init__(self):
@@ -114,9 +114,8 @@ class MediaDeviceManager:
         print(f"Image captured as {filename}")
     
     def show_image(image_path):
-        """Display the captured image using the default image viewer."""
-        img = Image.open(image_path)
-        img.show() 
+        """Display the captured image using 'eog' (Eye of GNOME)."""
+        os.system(f"eog {image_path}")
 
     def close(self):
         # Clean up resources
