@@ -7,6 +7,8 @@ import libraries.config
 import time
 
 
+
+
 def main():
     # Initialize classes
     sys_config = SystemConfig()
@@ -23,6 +25,13 @@ def main():
     GPIO.setup(22, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     # Set pin 27 to pul up (normally closed)
     GPIO.setup(27, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+    # Shutdown Pin on Amplifier
+    AMP_SD_PIN = 22
+    GPIO.setup(AMP_SD_PIN, GPIO.OUT)
+    GPIO.output(AMP_SD_PIN, GPIO.LOW);
+
+
 
     restart = 0 #TODO implement an exit/restart mechanism
     default_prompt = "Describe what you see in front of you"
@@ -60,6 +69,9 @@ def main():
                 # Make LLM API Call
                 text_response = api_handler.gpt_image_request(temp_prompt)
                 context_window += f"USER: {default_prompt} \n GPT: {text_response} \n"
+
+                # Turn On Speaker
+                GPIO.output(AMP_SD_PIN, GPIO.HIGH)
                 # Convert LLM Response to Audio
                 api_handler.speak_and_play_tts(text_response)
                 
@@ -80,6 +92,9 @@ def main():
                 text_response = api_handler.gpt_image_request(temp_prompt)
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
+                # Turn On Speaker
+                GPIO.output(AMP_SD_PIN, GPIO.HIGH)
+
                 # Convert LLM Response to Audio
                 api_handler.speak_and_play_tts(text_response)
                 
@@ -91,6 +106,9 @@ def main():
                 # Make LLM API Call with Custom Prompt
                 text_response = api_handler.gpt_request(temp_prompt)
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
+
+                # Turn On Speaker
+                GPIO.output(AMP_SD_PIN, GPIO.HIGH)
 
                 # Convert LLM Response to Audio
                 api_handler.speak_and_play_tts(text_response)
