@@ -6,6 +6,13 @@ from libraries.config import config
 import libraries.config
 import time
 
+def check_gpio_state(expected_state, AMP_SD):
+    """Checks if GPIO state matches the expected state."""
+    actual_state = GPIO.input(AMP_SD)
+    if actual_state == expected_state:
+        print(f"✅ GPIO {AMP_SD} is {'HIGH (ON)' if actual_state else 'LOW (OFF)'} as expected.")
+    else:
+        print(f"❌ ERROR: GPIO {AMP_SD} is {'HIGH (ON)' if actual_state else 'LOW (OFF)'} but expected {'HIGH (ON)' if expected_state else 'LOW (OFF)'}!")
 
 
 
@@ -31,6 +38,7 @@ def main():
     GPIO.setup(AMP_SD_PIN, GPIO.OUT)
     GPIO.output(AMP_SD_PIN, GPIO.LOW);
 
+    check_gpio_state(GPIO.LOW,26)  # Verify if the pin is HIGH
 
 
     restart = 0 #TODO implement an exit/restart mechanism
@@ -70,8 +78,15 @@ def main():
                 text_response = api_handler.gpt_image_request(temp_prompt)
                 context_window += f"USER: {default_prompt} \n GPT: {text_response} \n"
 
+                # Check that pin is low
+                check_gpio_state(GPIO.LOW,AMP_SD_PIN)
+
                 # Turn On Speaker
                 GPIO.output(AMP_SD_PIN, GPIO.HIGH)
+
+                # Check that pin is low
+                check_gpio_state(GPIO.HIGH,AMP_SD_PIN)
+                
                 # Convert LLM Response to Audio
                 api_handler.speak_and_play_tts(text_response)
                 
@@ -92,8 +107,14 @@ def main():
                 text_response = api_handler.gpt_image_request(temp_prompt)
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
+                # Check that pin is low
+                check_gpio_state(GPIO.LOW,AMP_SD_PIN)
+
                 # Turn On Speaker
                 GPIO.output(AMP_SD_PIN, GPIO.HIGH)
+
+                # Check that pin is low
+                check_gpio_state(GPIO.HIGH,AMP_SD_PIN)
 
                 # Convert LLM Response to Audio
                 api_handler.speak_and_play_tts(text_response)
@@ -107,8 +128,14 @@ def main():
                 text_response = api_handler.gpt_request(temp_prompt)
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
+                # Check that pin is low
+                check_gpio_state(GPIO.LOW,AMP_SD_PIN)
+
                 # Turn On Speaker
                 GPIO.output(AMP_SD_PIN, GPIO.HIGH)
+
+                # Check that pin is low
+                check_gpio_state(GPIO.HIGH,AMP_SD_PIN)
 
                 # Convert LLM Response to Audio
                 api_handler.speak_and_play_tts(text_response)
