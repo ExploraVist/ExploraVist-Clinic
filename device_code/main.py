@@ -5,6 +5,8 @@ import RPi.GPIO as GPIO  # Import Raspberry Pi GPIO library
 from libraries.config import config
 import libraries.config
 import time
+import threading
+import pyttsx3
 
 
 def main():

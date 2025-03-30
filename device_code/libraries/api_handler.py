@@ -9,7 +9,6 @@ from libraries.metrics import timed
 import sounddevice as sd
 import tempfile
 import asyncio
-import websockets
 import json
 from pydub import AudioSegment
 import io
