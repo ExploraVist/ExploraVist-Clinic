@@ -7,6 +7,14 @@ import RPi.GPIO as GPIO
 import time
 from libraries.metrics import timed
 import sounddevice as sd
+import tempfile
+import asyncio
+import websockets
+import json
+from pydub import AudioSegment
+import io
+import logging
+import numpy as np
 from TTS.utils.generic_utils import download_model
 from TTS.tts.utils import setup_model
 
