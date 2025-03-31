@@ -123,20 +123,18 @@ class APIHandler:
                 pcm_files = []
 
                 for i, chunk in enumerate(chunks):
-                        params = {
-                        "text": chunk,
-                        "model": "aura-asteria-en"
-                        }
                         pcm_path = f"audio/chunk_{i}.pcm"
-                        pcm_files.append(pcm_path)
+
                         try:
-                                with self.session.get(url, headers=headers, params=params, stream=True) as response:
+                                with self.session.post(url, headers=headers, data=chunk.encode("utf-8"), stream=True) as response:
                                         response.raise_for_status()
                                         with open(pcm_path, "wb") as f:
-                                                for chunk in response.iter_content(chunk_size=4096):
-                                                        if chunk:
-                                                                f.write(chunk)
+                                                for audio_chunk in response.iter_content(chunk_size=4096):
+                                                        if audio_chunk:
+                                                                f.write(audio_chunk)
+
                                 pcm_files.append(pcm_path)
+
                         except requests.RequestException as e:
                                 print(f"Chunk {i} failed: {e}")
                                 continue
