@@ -93,7 +93,7 @@ class APIHandler:
         def stream_tts(self, text):
                 url = "https://api.deepgram.com/v1/speak"
                 headers={
-                        "Authorization": f"Token {self.DEEPGRAM_API_KEY}"
+                        "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
                         "Accept": "audio/linear16"
                         }
                 
