@@ -82,6 +82,7 @@ def main():
                 begin = time.time()
                 api_handler.stream_tts(text_response)
                 end = time.time()
+                print ("text to speech")
                 print (end-begin)
                 
                 api_handler.play_audio()
