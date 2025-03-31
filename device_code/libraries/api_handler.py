@@ -5,17 +5,6 @@ import requests
 import subprocess
 import RPi.GPIO as GPIO
 import time
-from libraries.metrics import timed
-import sounddevice as sd
-import tempfile
-import asyncio
-import json
-from pydub import AudioSegment
-import io
-import logging
-import numpy as np
-from TTS.utils.generic_utils import download_model
-from TTS.tts.utils import setup_model
 
 def encode_image(image_path):
         with open(image_path, "rb") as image_file:
@@ -102,20 +91,48 @@ class APIHandler:
                         return None
                 
         @timed
-        def stream_tts(self,text):
-                # Download and load the pre-trained TTS model (if not already downloaded)
-                model_path = download_model('tts_models/en/ljspeech/glow-tts')
-                tts = setup_model(model_path)
-                
-                # Generate the mel spectrogram from the input text
-                mel_spectrogram = tts.text_to_mel(text)
+        def stream_tts(self, file_path="audio/audio.wav"):
+                url = "https://api.deepgram.com/v1/speak"
+                headers={
+                        "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
+                        "Content-Type": "audio/wav"  # Use "audio/mp3" for MP3 files
+                        },
+                try:
+                        with open(file_path, "r", encoding="utf-8") as f:
+                        text = f.read()
+                except FileNotFoundError:
+                        print(f"Error: File '{file_path}' not found.")
+                        return
 
-                # Synthesize audio from the mel spectrogram
-                audio = tts.mel_to_audio(mel_spectrogram)
+                params = {
+                        "text": text,
+                        "model": "aura-asteria-en",
+                        "encoding": "linear16",
+                        "sample_rate": "16000"
+                }
 
-                # Play the audio
-                sd.play(audio, samplerate=22050)
-                sd.wait()  # Wait until audio is finished playing
+                try:
+                        print("Starting stream from Deepgram...")
+                        with requests.get(url, headers=headers, params=params, stream=True) as response:
+                                response.raise_for_status()
+
+                # Start aplay subprocess and stream into its stdin
+                                player = subprocess.Popen(["aplay", "-f", "S16_LE", "-r", "16000"], stdin=subprocess.PIPE)
+
+                                for chunk in response.iter_content(chunk_size=4096):
+                                        if GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:
+                                                print("Button pressed. Stopping stream.")
+                                                player.terminate()
+                                                break
+
+                                        if chunk:
+                                                player.stdin.write(chunk)
+
+                                player.stdin.close()
+                                player.wait()
+
+                except requests.exceptions.RequestException as e:
+                        print(f"Request error: {e}")
 
         @timed
         def play_audio(self, audio_file="audio/converted_response.wav"):
