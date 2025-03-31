@@ -90,19 +90,13 @@ class APIHandler:
                         print(f"Error during request: {e}")
                         return None
                 
-        def stream_tts(self, file_path="audio/audio.wav"):
+        def stream_tts(self, text):
                 url = "https://api.deepgram.com/v1/speak"
                 headers={
                         "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
                         "Content-Type": "audio/wav"  # Use "audio/mp3" for MP3 files
                         },
-                try:
-                        with open(file_path, "r", encoding="utf-8") as f:
-                                text = f.read()
-                except FileNotFoundError:
-                        print(f"Error: File '{file_path}' not found.")
-                        return
-
+                
                 params = {
                         "text": text,
                         "model": "aura-asteria-en",
@@ -111,27 +105,48 @@ class APIHandler:
                 }
 
                 try:
-                        print("Starting stream from Deepgram...")
-                        with requests.get(url, headers=headers, params=params, stream=True) as response:
+                # Stream the audio response to a raw PCM file
+                        raw_file = "audio/audio.pcm"
+                        with self.session.get(url, headers=headers, params=params, stream=True) as response:
                                 response.raise_for_status()
 
-                # Start aplay subprocess and stream into its stdin
-                                player = subprocess.Popen(["aplay", "-f", "S16_LE", "-r", "16000"], stdin=subprocess.PIPE)
+                                with open(raw_file, "wb") as audio_file:
+                                        for chunk in response.iter_content(chunk_size=4096):
+                                                if chunk:
+                                                        audio_file.write(chunk)
 
-                                for chunk in response.iter_content(chunk_size=4096):
-                                        if GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:
-                                                print("Button pressed. Stopping stream.")
-                                                player.terminate()
-                                                break
+                        # Convert the raw PCM to WAV
+                        converted_file = "audio/converted_response.wav"
+                        temp_amplified_file = "audio/temp_amplified.wav"
+                        conversion_command = [
+                                "ffmpeg", "-y",
+                                "-f", "s16le",
+                                "-ar", "44100",
+                                "-ac", "1",
+                                "-i", raw_file,
+                                converted_file
+                        ]
+                        amplification_command = [
+                                "ffmpeg", "-y",
+                                "-i", converted_file,
+                                "-filter:a", "volume=3",
+                                temp_amplified_file
+                        ]
 
-                                        if chunk:
-                                                player.stdin.write(chunk)
+                        try:
+                                subprocess.run(conversion_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+                                subprocess.run(amplification_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+                                os.replace(temp_amplified_file, converted_file)
+                                os.remove(raw_file)
+                                return converted_file
 
-                                player.stdin.close()
-                                player.wait()
+                        except subprocess.CalledProcessError as e:
+                                print(f"Error during audio processing: {e}")
+                                return None
 
                 except requests.exceptions.RequestException as e:
-                        print(f"Request error: {e}")
+                        print(f"Error during request: {e}")
+                        return None
 
 
         def play_audio(self, audio_file="audio/converted_response.wav"):
