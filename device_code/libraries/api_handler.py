@@ -136,6 +136,7 @@ class APIHandler:
                                                 for chunk in response.iter_content(chunk_size=4096):
                                                         if chunk:
                                                                 f.write(chunk)
+                                pcm_files.append(pcm_path)
                         except requests.RequestException as e:
                                 print(f"Chunk {i} failed: {e}")
                                 continue
