@@ -99,7 +99,7 @@ class APIHandler:
                         },
                 try:
                         with open(file_path, "r", encoding="utf-8") as f:
-                        text = f.read()
+                                text = f.read()
                 except FileNotFoundError:
                         print(f"Error: File '{file_path}' not found.")
                         return
