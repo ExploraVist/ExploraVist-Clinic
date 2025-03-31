@@ -5,6 +5,8 @@ import requests
 import subprocess
 import RPi.GPIO as GPIO
 import time
+import re
+from pathlib import Path
 
 def encode_image(image_path):
         with open(image_path, "rb") as image_file:
@@ -90,6 +92,23 @@ class APIHandler:
                         print(f"Error during request: {e}")
                         return None
                 
+        def split_text(text, max_length=200):
+        # Naive sentence-based splitter with length control
+                sentences = re.split(r'(?<=[.!?])\s+', text)
+                chunks = []
+                current_chunk = ""
+
+                for sentence in sentences:
+                        if len(current_chunk) + len(sentence) <= max_length:
+                                current_chunk += " " + sentence
+                        else:
+                                if current_chunk:
+                                        chunks.append(current_chunk.strip())
+                                        current_chunk = sentence
+                if current_chunk:
+                        chunks.append(current_chunk.strip())
+                return chunks 
+         
         def stream_tts(self, text):
                 url = "https://api.deepgram.com/v1/speak"
                 headers={
@@ -97,55 +116,47 @@ class APIHandler:
                         "Accept": "audio/linear16"
                         }
                 
-                params = {
-                        "text": text,
-                        "model": "aura-asteria-en",
-                }
+                
+                chunks = split_text(text)
+                Path("audio").mkdir(exist_ok=True)
+                pcm_files = []
 
-                try:
-                # Stream the audio response to a raw PCM file
-                        raw_file = "audio/audio.pcm"
-                        with self.session.get(url, headers=headers, params=params, stream=True) as response:
-                                response.raise_for_status()
-
-                                with open(raw_file, "wb") as audio_file:
-                                        for chunk in response.iter_content(chunk_size=4096):
-                                                if chunk:
-                                                        audio_file.write(chunk)
-
-                        # Convert the raw PCM to WAV
-                        converted_file = "audio/converted_response.wav"
-                        temp_amplified_file = "audio/temp_amplified.wav"
-                        conversion_command = [
-                                "ffmpeg", "-y",
-                                "-f", "s16le",
-                                "-ar", "24000",
-                                "-ac", "1",
-                                "-i", raw_file,
-                                converted_file
-                        ]
-                        amplification_command = [
-                                "ffmpeg", "-y",
-                                "-i", converted_file,
-                                "-filter:a", "volume=3",
-                                temp_amplified_file
-                        ]
-
+                for i, chunk in enumerate(chunks):
+                        params = {
+                        "text": chunk,
+                        "model": "aura-asteria-en"
+                        }
+                        pcm_path = f"audio/chunk_{i}.pcm"
+                        pcm_files.append(pcm_path)
                         try:
-                                subprocess.run(conversion_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-                                subprocess.run(amplification_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-                                os.replace(temp_amplified_file, converted_file)
-                                os.remove(raw_file)
-                                return converted_file
+                                with self.session.get(url, headers=headers, params=params, stream=True) as response:
+                                        response.raise_for_status()
+                                        with open(pcm_path, "wb") as f:
+                                                for chunk in response.iter_content(chunk_size=4096):
+                                                        if chunk:
+                                                                f.write(chunk)
+                        except requests.RequestException as e:
+                                print(f"Chunk {i} failed: {e}")
+                                continue
+                merged_pcm = "audio/full_audio.pcm"
+                with open(merged_pcm, "wb") as outfile:
+                        for pcm in pcm_files:
+                                with open(pcm, "rb") as infile:   
+                                        outfile.write(infile.read())
+                                os.remove(pcm)
+                
+                wav_path = "audio/converted_response.wav"
+                subprocess.run([
+                        "ffmpeg", "-y",
+                        "-f", "s16le",
+                        "-ar", "24000",
+                        "-ac", "1",
+                        "-i", merged_pcm,
+                        wav_path
+                ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-                        except subprocess.CalledProcessError as e:
-                                print(f"Error during audio processing: {e}")
-                                return None
-
-                except requests.exceptions.RequestException as e:
-                        print(f"Error during request: {e}")
-                        return None
-
+                os.remove(merged_pcm)
+                return wav_path
 
         def play_audio(self, audio_file="audio/converted_response.wav"):
                 """
