@@ -30,7 +30,7 @@ class APIHandler:
                         "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
                         "Content-Type": "text/plain"
                 })
-        @timed
+
         def text_to_speech(self, text):
                 """
                 Converts text to speech using the Deepgram TTS API and saves the audio file.
@@ -90,7 +90,6 @@ class APIHandler:
                         print(f"Error during request: {e}")
                         return None
                 
-        @timed
         def stream_tts(self, file_path="audio/audio.wav"):
                 url = "https://api.deepgram.com/v1/speak"
                 headers={
@@ -134,7 +133,7 @@ class APIHandler:
                 except requests.exceptions.RequestException as e:
                         print(f"Request error: {e}")
 
-        @timed
+
         def play_audio(self, audio_file="audio/converted_response.wav"):
                 """
                 Plays the converted audio file and monitors for cancellation.
@@ -167,7 +166,7 @@ class APIHandler:
                 # Clean up the converted file
                 os.remove(audio_file)
 
-        @timed
+
         def audio_to_text(self, file_path="audio/audio.wav"):
                 """
                         Transcribes audio to text using Deepgram's API.
@@ -209,7 +208,7 @@ class APIHandler:
                                 print(f"Error: {response.status_code} - {response.text}")
                                 return None
 
-        @timed
+
         def gpt_request(self, transcript):
                 """
                         Performs GPT API Request with a custom prompt returning text response
@@ -235,7 +234,7 @@ class APIHandler:
                         return response
                 return None
 
-        @timed
+
         def gpt_image_request(self, transcript, photo_path="images/temp_image.jpg"):
                 """
                 Sends an image and a text prompt to the GPT API and returns the text response.
