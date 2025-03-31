@@ -117,7 +117,7 @@ class APIHandler:
                         }
                 
                 
-                chunks = split_text(text)
+                chunks = self.split_text(text)
                 Path("audio").mkdir(exist_ok=True)
                 pcm_files = []
 
