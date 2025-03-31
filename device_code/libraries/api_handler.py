@@ -95,7 +95,7 @@ class APIHandler:
                 headers={
                         "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
                         "Content-Type": "audio/wav"  # Use "audio/mp3" for MP3 files
-                        },
+                        }
                 
                 params = {
                         "text": text,
