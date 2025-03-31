@@ -93,15 +93,12 @@ class APIHandler:
         def stream_tts(self, text):
                 url = "https://api.deepgram.com/v1/speak"
                 headers={
-                        "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
-                        "Content-Type": "audio/wav"  # Use "audio/mp3" for MP3 files
+                        "Authorization": f"Token {self.DEEPGRAM_API_KEY}"
                         }
                 
                 params = {
                         "text": text,
                         "model": "aura-asteria-en",
-                        "encoding": "linear16",
-                        "sample_rate": "16000"
                 }
 
                 try:
@@ -121,7 +118,7 @@ class APIHandler:
                         conversion_command = [
                                 "ffmpeg", "-y",
                                 "-f", "s16le",
-                                "-ar", "44100",
+                                "-ar", "24000",
                                 "-ac", "1",
                                 "-i", raw_file,
                                 converted_file
