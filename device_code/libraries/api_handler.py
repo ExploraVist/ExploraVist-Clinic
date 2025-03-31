@@ -91,7 +91,8 @@ class APIHandler:
                 except requests.exceptions.RequestException as e:
                         print(f"Error during request: {e}")
                         return None
-                
+        
+        @staticmethod
         def split_text(text, max_length=200):
         # Naive sentence-based splitter with length control
                 sentences = re.split(r'(?<=[.!?])\s+', text)
