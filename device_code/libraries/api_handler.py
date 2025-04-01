@@ -208,6 +208,9 @@ class APIHandler:
                 "Accept": "audio/mpeg"
                 }
 
+                if len(text) <= 200:  # or adjust threshold based on performance        
+                        self._process_and_play_single_chunk(text)
+                        return
                 chunks = self.split_text(text)
                 Path("audio").mkdir(exist_ok=True)
                 q = queue.Queue()
@@ -263,6 +266,36 @@ class APIHandler:
                         time.sleep(0.1)
                 audio_process.wait()
                 os.remove(wav_path)
+
+        def _process_and_play_single_chunk(self, text):
+                url = "https://api.deepgram.com/v1/speak"
+                headers = {
+                        "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
+                        "Accept": "audio/mpeg"
+                }
+
+                wav_path = "audio/quick_response.wav"
+                try:
+                        with self.session.post(url, headers=headers, data=text.encode("utf-8"), stream=True) as response:
+                                response.raise_for_status()
+
+                                ffmpeg_process = subprocess.Popen([
+                                        "ffmpeg", "-y", "-threads", "1",
+                                        "-f", "mp3", "-i", "pipe:0",
+                                        wav_path
+                                ], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+                                for audio_chunk in response.iter_content(chunk_size=2048):
+                                        if audio_chunk:
+                                                ffmpeg_process.stdin.write(audio_chunk)
+
+                                ffmpeg_process.stdin.close()
+                                ffmpeg_process.wait()
+
+                        self._play_chunk(wav_path)
+
+                except requests.RequestException as e:
+                        print(f"Single chunk failed: {e}")
 
         def audio_to_text(self, file_path="audio/audio.wav"):
                 """
