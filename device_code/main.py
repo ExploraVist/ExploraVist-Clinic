@@ -59,7 +59,8 @@ def main():
                 context_window += f"USER: {default_prompt} \n GPT: {text_response} \n"
                 # Convert LLM Response to Audio
                 begin = time.time()
-                api_handler.stream_tts(text_response)
+                #api_handler.stream_tts(text_response)
+                api_handler.stream_tts_and_play(text_response)
                 end = time.time()
                 print ("text to speech")
                 print (end-begin)
@@ -81,7 +82,8 @@ def main():
 
                 # Convert LLM Response to Audio
                 begin = time.time()
-                api_handler.stream_tts(text_response)
+                #api_handler.stream_tts(text_response)
+                api_handler.stream_tts_and_play(text_response)
                 end = time.time()
                 print ("text to speech")
                 print (end-begin)
