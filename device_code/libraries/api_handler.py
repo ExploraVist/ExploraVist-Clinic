@@ -112,56 +112,59 @@ class APIHandler:
          
         def stream_tts(self, text):
                 url = "https://api.deepgram.com/v1/speak"
-                headers={
+                headers = {
                         "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
-                        "Accept": "audio/linear16"
-                        }
-                
-                
+                        "Accept": "audio/mpeg"  # Deepgram will return MP3 audio
+                }
+
                 chunks = self.split_text(text)
                 Path("audio").mkdir(exist_ok=True)
-                pcm_files = []
+                wav_files = []
 
                 for i, chunk in enumerate(chunks):
-                        pcm_path = f"audio/chunk_{i}.pcm"
+                        mp3_path = f"audio/chunk_{i}.mp3"
+                        wav_path = f"audio/chunk_{i}.wav"
 
                         try:
                                 with self.session.post(url, headers=headers, data=chunk.encode("utf-8"), stream=True) as response:
                                         response.raise_for_status()
-                                        print(f"Chunk {i} response headers:", response.headers)
-
-                                        with open(pcm_path, "wb") as f:
-                                                first_chunk = True
+                                        with open(mp3_path, "wb") as f:
                                                 for audio_chunk in response.iter_content(chunk_size=4096):
-                                                        if first_chunk:
-                                                                print(f"First 32 bytes of chunk {i}:", audio_chunk[:32])
-                                                                first_chunk = False
                                                         if audio_chunk:
                                                                 f.write(audio_chunk)
-                                pcm_files.append(pcm_path)
+
+            # Convert MP3 to WAV
+                                subprocess.run([
+                                        "ffmpeg", "-y", "-i", mp3_path, wav_path
+                                ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                                wav_files.append(wav_path)
+                                os.remove(mp3_path)
 
                         except requests.RequestException as e:
                                 print(f"Chunk {i} failed: {e}")
                                 continue
-                merged_pcm = "audio/full_audio.pcm"
-                with open(merged_pcm, "wb") as outfile:
-                        for pcm in pcm_files:
-                                with open(pcm, "rb") as infile:   
-                                        outfile.write(infile.read())
-                                os.remove(pcm)
-                
-                wav_path = "audio/converted_response.wav"
+
+    # Create a file list for ffmpeg concat
+                concat_list_path = "audio/concat_list.txt"
+                with open(concat_list_path, "w") as f:
+                        for wav_file in wav_files:
+                                f.write(f"file '{os.path.abspath(wav_file)}'\n")
+
+                final_wav = "audio/converted_response.wav"
+
+    # Use ffmpeg to concatenate all .wav files
                 subprocess.run([
-                        "ffmpeg", "-y",
-                        "-f", "s16le",
-                        "-ar", "16000",  # match Deepgram’s actual output rate
-                        "-ac", "1",
-                        "-i", merged_pcm,
-                        wav_path
+                        "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_list_path,
+                        "-c", "copy", final_wav
                 ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-                os.remove(merged_pcm)
-                return wav_path
+    # Cleanup
+                for wav in wav_files:
+                        os.remove(wav)
+                        os.remove(concat_list_path)
+
+                return final_wav
 
         def play_audio(self, audio_file="audio/converted_response.wav"):
                 """
