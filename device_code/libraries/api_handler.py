@@ -128,11 +128,16 @@ class APIHandler:
                         try:
                                 with self.session.post(url, headers=headers, data=chunk.encode("utf-8"), stream=True) as response:
                                         response.raise_for_status()
+                                        print(f"Chunk {i} response headers:", response.headers)
+
                                         with open(pcm_path, "wb") as f:
+                                                first_chunk = True
                                                 for audio_chunk in response.iter_content(chunk_size=4096):
+                                                        if first_chunk:
+                                                                print(f"First 32 bytes of chunk {i}:", audio_chunk[:32])
+                                                                first_chunk = False
                                                         if audio_chunk:
                                                                 f.write(audio_chunk)
-
                                 pcm_files.append(pcm_path)
 
                         except requests.RequestException as e:
