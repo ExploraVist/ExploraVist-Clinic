@@ -149,7 +149,7 @@ class APIHandler:
                 subprocess.run([
                         "ffmpeg", "-y",
                         "-f", "s16le",
-                        "-ar", "24000",
+                        "-ar", "16000",  # match Deepgram’s actual output rate
                         "-ac", "1",
                         "-i", merged_pcm,
                         wav_path
