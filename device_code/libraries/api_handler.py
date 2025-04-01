@@ -247,7 +247,7 @@ class APIHandler:
                                 wav_path = q.get()
                                 if wav_path is None:
                                         break
-                        self._play_chunk(wav_path)
+                                self._play_chunk(wav_path)
 
                 threading.Thread(target=producer, daemon=True).start()
                 consumer()  # This stays in the main thread so it can monitor GPIO
