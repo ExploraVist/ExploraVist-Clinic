@@ -63,7 +63,7 @@ def main():
                 #api_handler.stream_tts(text_response)
                 api_handler.stream_tts_and_play(text_response)
                 print ("text to speech")
-                print (end-begin)
+                print (end, begin, end-begin)
                 
                 #api_handler.play_audio()
 
@@ -85,7 +85,7 @@ def main():
                 #api_handler.stream_tts(text_response)
                 api_handler.stream_tts_and_play(text_response)
                 print ("text to speech")
-                print (end-begin)
+                print (end, begin, end-begin)
                 
                 #api_handler.play_audio()
 
