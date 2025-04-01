@@ -64,7 +64,7 @@ def main():
                 print ("text to speech")
                 print (end-begin)
                 
-                api_handler.play_audio()
+                #api_handler.play_audio()
 
         elif time_pressed > 1.5:
             if button_pressed == 2:   # Image with Custom Prompt
@@ -86,7 +86,7 @@ def main():
                 print ("text to speech")
                 print (end-begin)
                 
-                api_handler.play_audio()
+                #api_handler.play_audio()
 
             elif button_pressed == 1: # Custom Prompt Only
                 # Speech to Text
