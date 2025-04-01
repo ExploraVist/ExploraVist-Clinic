@@ -55,13 +55,13 @@ def main():
                 device.capture_image()
                 temp_prompt = context_window + f"Current Question: {default_prompt} \n"
                 # Make LLM API Call
+                begin = time.time()
                 text_response = api_handler.gpt_image_request(temp_prompt)
                 context_window += f"USER: {default_prompt} \n GPT: {text_response} \n"
                 # Convert LLM Response to Audio
-                begin = time.time()
+                end = time.time()
                 #api_handler.stream_tts(text_response)
                 api_handler.stream_tts_and_play(text_response)
-                end = time.time()
                 print ("text to speech")
                 print (end-begin)
                 
@@ -75,16 +75,15 @@ def main():
                 # Speech to Text
                 transcript = api_handler.audio_to_text()
                 temp_prompt = context_window + f"Current Question: {transcript} \n"
-
                 # Make LLM API Call with Custom Prompt
+                begin = time.time()
                 text_response = api_handler.gpt_image_request(temp_prompt)
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
                 # Convert LLM Response to Audio
-                begin = time.time()
+                end = time.time()
                 #api_handler.stream_tts(text_response)
                 api_handler.stream_tts_and_play(text_response)
-                end = time.time()
                 print ("text to speech")
                 print (end-begin)
                 
