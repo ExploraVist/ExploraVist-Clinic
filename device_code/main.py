@@ -5,7 +5,23 @@ import RPi.GPIO as GPIO  # Import Raspberry Pi GPIO library
 from libraries.config import config
 import libraries.config
 import time
+import threading
+import subprocess
+import os
 
+def play_filler_sound():
+    """Plays a looping filler sound in the background."""
+    global filler_process
+    filler_sound = "audio_files/filler_sound.wav"
+    if os.path.exists(filler_sound):
+        filler_process = subprocess.Popen(["aplay", filler_sound, "--loop"])
+
+def stop_filler_sound():
+    """Stops the filler sound if it is playing."""
+    global filler_process
+    if filler_process:
+        filler_process.terminate()
+        filler_process = None
 
 def main():
     # Initialize classes
@@ -47,20 +63,30 @@ def main():
         time_pressed = time.time() - start_time
 
         if time_pressed <= 1.6 and time_pressed >= 0.1: # Image Description Using Default Prompt
+            api_handler.play_audio("popClickHighPitch.wav") # Play Button Click Sound
             # Image Response
             if button_pressed == 2:
                 # Take image
                 device.capture_image()
                 temp_prompt = context_window + f"Current Question: {default_prompt} \n"
+
+                # Start filler sound in a separate thread
+                filler_thread = threading.Thread(target=play_filler_sound, daemon=True)
+                filler_thread.start()
+
                 # Make LLM API Call
                 text_response = api_handler.gpt_image_request(temp_prompt)
                 context_window += f"USER: {default_prompt} \n GPT: {text_response} \n"
                 # Convert LLM Response to Audio
                 api_handler.text_to_speech(text_response)
+
+                # Stop filler sound once response is ready
+                stop_filler_sound()
                 
                 api_handler.play_audio()
 
         elif time_pressed > 1.5:
+            api_handler.play_audio("popClickHighPitch.wav") # Play Button Click Sound
             if button_pressed == 2:   # Image with Custom Prompt
                 # Take image
                 device.capture_image()
@@ -69,12 +95,19 @@ def main():
                 transcript = api_handler.audio_to_text()
                 temp_prompt = context_window + f"Current Question: {transcript} \n"
 
+                # Play a filler while it processes
+                filler_thread = threading.Thread(target=play_filler_sound, daemon=True)
+                filler_thread.start()
+
                 # Make LLM API Call with Custom Prompt
                 text_response = api_handler.gpt_image_request(temp_prompt)
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
                 # Convert LLM Response to Audio
                 api_handler.text_to_speech(text_response)
+
+                # Stop Filler Sound
+                stop_filler_sound()
                 
                 api_handler.play_audio()
 
@@ -83,6 +116,10 @@ def main():
                 transcript = api_handler.audio_to_text()
                 temp_prompt = context_window + f"Current Question: {transcript} \n"
 
+                # Play a filler while it processes
+                filler_thread = threading.Thread(target=play_filler_sound, daemon=True)
+                filler_thread.start()
+
                 # Make LLM API Call with Custom Prompt
                 text_response = api_handler.gpt_request(temp_prompt)
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
@@ -90,6 +127,9 @@ def main():
                 # Convert LLM Response to Audio
                 api_handler.text_to_speech(text_response)
                 
+                # Stop Filler Sound
+                stop_filler_sound()
+
                 api_handler.play_audio()
             else:
                 continue

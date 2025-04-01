@@ -8,6 +8,8 @@ from picamera2 import Picamera2
 from picamera2.previews import QtGlPreview
 from libraries.metrics import timed
 
+
+
 class MediaDeviceManager:
     def __init__(self):
         # Initialize PyAudio and Picamera2

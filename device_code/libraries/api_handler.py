@@ -6,10 +6,8 @@ import subprocess
 import RPi.GPIO as GPIO
 import time
 from libraries.metrics import timed
+import threading
 
-def encode_image(image_path):
-        with open(image_path, "rb") as image_file:
-                return base64.b64encode(image_file.read()).decode('utf-8')
 
 class APIHandler:
     #TODO incorporate a requests.Session() for Keep-Alive, Ex:
@@ -100,10 +98,10 @@ class APIHandler:
                         audio_file (str): Path to the audio file to play
                 """
                 if not os.path.exists(audio_file):
-                        print("Error: Audio file not found.")
+                        print(F"Error: Audio file not found: {audio_file}")
                         return
 
-                print("Audio data received successfully. Playing audio...")
+                print(f"Audio data received successfully. Playing audio: {audio_file}")
                 # temp_time = time.time()
                 
                 audio_process = subprocess.Popen(["aplay", audio_file])
