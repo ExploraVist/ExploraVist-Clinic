@@ -49,11 +49,16 @@ def main():
         time_pressed = time.time() - start_time
 
         if time_pressed <= 1.6 and time_pressed >= 0.1: # Image Description Using Default Prompt
+            
             # Image Response
             if button_pressed == 2:
                 # Take image
                 device.capture_image()
                 temp_prompt = context_window + f"Current Question: {default_prompt} \n"
+
+                # Play Starting Sound
+                api_handler.play_audio("audio_files/start_sound.wav")
+
                 # Make LLM API Call
                 begin = time.time()
                 text_response = api_handler.gpt_image_request(temp_prompt)
@@ -75,6 +80,12 @@ def main():
                 # Speech to Text
                 transcript = api_handler.audio_to_text()
                 temp_prompt = context_window + f"Current Question: {transcript} \n"
+
+
+                # Play Starting Sound
+                api_handler.play_audio("audio_files/start_sound.wav")
+
+
                 # Make LLM API Call with Custom Prompt
                 begin = time.time()
                 text_response = api_handler.gpt_image_request(temp_prompt)

@@ -78,7 +78,6 @@ cover/
 *.db
 
 # Ignore media files (audio and video)
-*.wav
 *.mp3
 *.mp4
 *.avi
