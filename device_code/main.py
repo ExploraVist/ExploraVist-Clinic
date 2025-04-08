@@ -5,6 +5,8 @@ import RPi.GPIO as GPIO  # Import Raspberry Pi GPIO library
 from libraries.config import config
 import libraries.config
 import time
+import threading
+import pyttsx3
 
 
 def main():
@@ -53,12 +55,17 @@ def main():
                 device.capture_image()
                 temp_prompt = context_window + f"Current Question: {default_prompt} \n"
                 # Make LLM API Call
+                begin = time.time()
                 text_response = api_handler.gpt_image_request(temp_prompt)
                 context_window += f"USER: {default_prompt} \n GPT: {text_response} \n"
                 # Convert LLM Response to Audio
-                api_handler.text_to_speech(text_response)
+                end = time.time()
+                #api_handler.stream_tts(text_response)
+                api_handler.stream_tts_and_play(text_response)
+                print ("text to speech")
+                print (end, begin, end-begin)
                 
-                api_handler.play_audio()
+                #api_handler.play_audio()
 
         elif time_pressed > 1.5:
             if button_pressed == 2:   # Image with Custom Prompt
@@ -68,15 +75,19 @@ def main():
                 # Speech to Text
                 transcript = api_handler.audio_to_text()
                 temp_prompt = context_window + f"Current Question: {transcript} \n"
-
                 # Make LLM API Call with Custom Prompt
+                begin = time.time()
                 text_response = api_handler.gpt_image_request(temp_prompt)
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
                 # Convert LLM Response to Audio
-                api_handler.text_to_speech(text_response)
+                end = time.time()
+                #api_handler.stream_tts(text_response)
+                api_handler.stream_tts_and_play(text_response)
+                print ("text to speech")
+                print (end, begin, end-begin)
                 
-                api_handler.play_audio()
+                #api_handler.play_audio()
 
             elif button_pressed == 1: # Custom Prompt Only
                 # Speech to Text
@@ -88,7 +99,10 @@ def main():
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
                 # Convert LLM Response to Audio
-                api_handler.text_to_speech(text_response)
+                begin = time.time()
+                api_handler.stream_tts(text_response)
+                end = time.time()
+                print (end-begin)
                 
                 api_handler.play_audio()
             else:
