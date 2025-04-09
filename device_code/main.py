@@ -91,7 +91,7 @@ def main():
 
                 # Check that pin is low
                 check_gpio_state(GPIO.HIGH,AMP_SD_PIN)
-                # time.sleep(2) 
+                time.sleep(0.1) 
 
                 # Convert LLM Response to Audio
 
@@ -146,9 +146,6 @@ def main():
                 #api_handler.play_audio()
 
 
-                api_handler.stream_tts_and_play(text_response)
-                
-
             elif button_pressed == 1: # Custom Prompt Only
                 # Speech to Text
                 transcript = api_handler.audio_to_text()
@@ -166,12 +163,12 @@ def main():
 
                 # Check that pin is low
                 check_gpio_state(GPIO.HIGH,AMP_SD_PIN)
-                time.sleep(2) 
+                time.sleep(0.1) 
 
                 # Convert LLM Response to Audio
 
                 begin = time.time()
-                api_handler.stream_tts(text_response)
+                api_handler.stream_tts_and_play(text_response)
                 end = time.time()
                 print (end-begin)
 
