@@ -19,14 +19,7 @@ def check_gpio_state(expected_state, AMP_SD):
 
 
 def main():
-    # Initialize classes
-    sys_config = SystemConfig()
-    if not sys_config.check_system_ready():
-        print("System not ready. Exiting.")
-        return
-    print(config)
-    device = MediaDeviceManager()
-    api_handler = APIHandler(config=config) 
+    # Initialize GPIO first
     GPIO.setwarnings(False) # Ignore warning for now
     GPIO.setmode(GPIO.BCM)  # Use physical pin numbering
 
@@ -38,10 +31,19 @@ def main():
     # Shutdown Pin on Amplifier
     AMP_SD_PIN = 26
     GPIO.setup(AMP_SD_PIN, GPIO.OUT)
-    GPIO.output(AMP_SD_PIN, GPIO.LOW);
+    GPIO.output(AMP_SD_PIN, GPIO.LOW)
 
-    check_gpio_state(GPIO.LOW,26)  # Verify if the pin is HIGH
+    check_gpio_state(GPIO.LOW, AMP_SD_PIN)  # Verify if the pin is LOW
 
+    # Initialize classes
+    sys_config = SystemConfig()
+    if not sys_config.check_system_ready():
+        print("System not ready. Exiting.")
+        GPIO.cleanup()  # Clean up GPIO before exiting
+        return
+    print(config)
+    device = MediaDeviceManager()
+    api_handler = APIHandler(config=config) 
 
     restart = 0 #TODO implement an exit/restart mechanism
     default_prompt = "Describe what you see in front of you"
@@ -181,6 +183,7 @@ def main():
 
     # Clean up resources
     device.close()
+    GPIO.cleanup()  # Clean up GPIO before exiting
 
 if __name__ == '__main__':
     main()
