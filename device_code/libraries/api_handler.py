@@ -227,8 +227,9 @@ class APIHandler:
                 # print(f"Playback Time: {time.time() - temp_time:.2f} seconds")
                 # print("Playback finished.")
 
-                # Clean up the converted file
-                os.remove(audio_file)
+                # Only delete the file if it's a temporary response file
+                if "converted_response.wav" in audio_file:
+                    os.remove(audio_file)
         
         def stream_tts_and_play(self, text):
                 url = "https://api.deepgram.com/v1/speak"
