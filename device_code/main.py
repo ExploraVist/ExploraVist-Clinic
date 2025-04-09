@@ -5,6 +5,17 @@ import RPi.GPIO as GPIO  # Import Raspberry Pi GPIO library
 from libraries.config import config
 import libraries.config
 import time
+import threading
+import pyttsx3
+
+def check_gpio_state(expected_state, AMP_SD):
+    """Checks if GPIO state matches the expected state."""
+    actual_state = GPIO.input(AMP_SD)
+    if actual_state == expected_state:
+        print(f"✅ GPIO {AMP_SD} is {'HIGH (ON)' if actual_state else 'LOW (OFF)'} as expected.")
+    else:
+        print(f"❌ ERROR: GPIO {AMP_SD} is {'HIGH (ON)' if actual_state else 'LOW (OFF)'} but expected {'HIGH (ON)' if expected_state else 'LOW (OFF)'}!")
+
 
 
 def main():
@@ -14,8 +25,15 @@ def main():
 
     # Set pin 22 to pull up (normally closed)
     GPIO.setup(22, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    # Set pin 23 to pul up (normally closed)
+    # Set pin 27 to pul up (normally closed)
     GPIO.setup(27, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+    # Shutdown Pin on Amplifier
+    AMP_SD_PIN = 26
+    GPIO.setup(AMP_SD_PIN, GPIO.OUT)
+    GPIO.output(AMP_SD_PIN, GPIO.LOW)
+
+    check_gpio_state(GPIO.LOW, AMP_SD_PIN)  # Verify if the pin is LOW
 
     # Initialize classes
     sys_config = SystemConfig()
@@ -50,18 +68,43 @@ def main():
         time_pressed = time.time() - start_time
 
         if time_pressed <= 1.6 and time_pressed >= 0.1: # Image Description Using Default Prompt
+            
             # Image Response
             if button_pressed == 2:
                 # Take image
                 device.capture_image()
                 temp_prompt = context_window + f"Current Question: {default_prompt} \n"
+
+                # Play Starting Sound
+                api_handler.play_audio("audio_files/start_sound.wav")
+
                 # Make LLM API Call
+                begin = time.time()
                 text_response = api_handler.gpt_image_request(temp_prompt)
                 context_window += f"USER: {default_prompt} \n GPT: {text_response} \n"
+
+                # Check that pin is low
+                check_gpio_state(GPIO.LOW,AMP_SD_PIN)
+
+                # Turn On Speaker
+                GPIO.output(AMP_SD_PIN, GPIO.HIGH)
+
+                # Check that pin is low
+                check_gpio_state(GPIO.HIGH,AMP_SD_PIN)
+                time.sleep(0.1) 
+
                 # Convert LLM Response to Audio
-                api_handler.text_to_speech(text_response)
+
+                end = time.time()
+                #api_handler.stream_tts(text_response)
+                api_handler.stream_tts_and_play(text_response)
+                print ("text to speech")
+                print (end, begin, end-begin)
                 
-                api_handler.play_audio()
+                #api_handler.play_audio()
+
+                
+
 
         elif time_pressed > 1.5:
             if button_pressed == 2:   # Image with Custom Prompt
@@ -72,14 +115,36 @@ def main():
                 transcript = api_handler.audio_to_text()
                 temp_prompt = context_window + f"Current Question: {transcript} \n"
 
+
+                # Play Starting Sound
+                api_handler.play_audio("audio_files/start_sound.wav")
+
+
                 # Make LLM API Call with Custom Prompt
+                begin = time.time()
                 text_response = api_handler.gpt_image_request(temp_prompt)
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
-                # Convert LLM Response to Audio
-                api_handler.text_to_speech(text_response)
+                # Check that pin is low
+                check_gpio_state(GPIO.LOW,AMP_SD_PIN)
+
+                # Turn On Speaker
+                GPIO.output(AMP_SD_PIN, GPIO.HIGH)
                 
-                api_handler.play_audio()
+
+                # Check that pin is low
+                check_gpio_state(GPIO.HIGH,AMP_SD_PIN)
+                time.sleep(2) 
+
+                # Convert LLM Response to Audio
+                end = time.time()
+                #api_handler.stream_tts(text_response)
+                api_handler.stream_tts_and_play(text_response)
+                print ("text to speech")
+                print (end, begin, end-begin)
+                
+                #api_handler.play_audio()
+
 
             elif button_pressed == 1: # Custom Prompt Only
                 # Speech to Text
@@ -90,10 +155,24 @@ def main():
                 text_response = api_handler.gpt_request(temp_prompt)
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
+                # Check that pin is low
+                check_gpio_state(GPIO.LOW,AMP_SD_PIN)
+
+                # Turn On Speaker
+                GPIO.output(AMP_SD_PIN, GPIO.HIGH)
+
+                # Check that pin is low
+                check_gpio_state(GPIO.HIGH,AMP_SD_PIN)
+                time.sleep(0.1) 
+
                 # Convert LLM Response to Audio
-                api_handler.text_to_speech(text_response)
+
+                begin = time.time()
+                api_handler.stream_tts_and_play(text_response)
+                end = time.time()
+                print (end-begin)
+
                 
-                api_handler.play_audio()
             else:
                 continue
                 #print("waiting for input")

@@ -5,11 +5,44 @@ import requests
 import subprocess
 import RPi.GPIO as GPIO
 import time
+
+import re
+from pathlib import Path
+import threading
+import queue
+import time
+
 from libraries.metrics import timed
+import re
 
 def encode_image(image_path):
         with open(image_path, "rb") as image_file:
                 return base64.b64encode(image_file.read()).decode('utf-8')
+
+
+
+def segment_text_by_sentence(text):
+    """
+    Splits `text` into segments (sentences) by looking for punctuation followed by whitespace.
+    """
+    sentence_boundaries = re.finditer(r'(?<=[.!?])\s+', text)
+    boundaries_indices = [boundary.start() for boundary in sentence_boundaries]
+    
+    segments = []
+    start = 0
+    for boundary_index in boundaries_indices:
+        segments.append(text[start:boundary_index + 1].strip())
+        start = boundary_index + 1
+    # Append the last segment
+    segments.append(text[start:].strip())
+
+    return segments
+
+
+DEEPGRAM_API_KEY = "3d85ba05e27a54d04228f61d2b231c97d00b926a"
+if not DEEPGRAM_API_KEY:
+    raise ValueError("Please set the DEEPGRAM_API_KEY environment variable.")
+
 
 class APIHandler:
     #TODO incorporate a requests.Session() for Keep-Alive, Ex:
@@ -31,7 +64,7 @@ class APIHandler:
                         "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
                         "Content-Type": "text/plain"
                 })
-        @timed
+
         def text_to_speech(self, text):
                 """
                 Converts text to speech using the Deepgram TTS API and saves the audio file.
@@ -90,8 +123,81 @@ class APIHandler:
                 except requests.exceptions.RequestException as e:
                         print(f"Error during request: {e}")
                         return None
+        
+        @staticmethod
+        def split_text(text, max_length=200):
+        # Naive sentence-based splitter with length control
+                sentences = re.split(r'(?<=[.!?])\s+', text)
+                chunks = []
+                current_chunk = ""
 
-        @timed
+                for sentence in sentences:
+                        if len(current_chunk) + len(sentence) <= max_length:
+                                current_chunk += " " + sentence
+                        else:
+                                if current_chunk:
+                                        chunks.append(current_chunk.strip())
+                                        current_chunk = sentence
+                if current_chunk:
+                        chunks.append(current_chunk.strip())
+                return chunks 
+         
+        def stream_tts(self, text):
+                url = "https://api.deepgram.com/v1/speak"
+                headers = {
+                        "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
+                        "Accept": "audio/mpeg"  # Deepgram will return MP3 audio
+                }
+
+                chunks = self.split_text(text)
+                Path("audio").mkdir(exist_ok=True)
+                wav_files = []
+
+                for i, chunk in enumerate(chunks):
+                        mp3_path = f"audio/chunk_{i}.mp3"
+                        wav_path = f"audio/chunk_{i}.wav"
+
+                        try:
+                                with self.session.post(url, headers=headers, data=chunk.encode("utf-8"), stream=True) as response:
+                                        response.raise_for_status()
+                                        with open(mp3_path, "wb") as f:
+                                                for audio_chunk in response.iter_content(chunk_size=4096):
+                                                        if audio_chunk:
+                                                                f.write(audio_chunk)
+
+            # Convert MP3 to WAV
+                                subprocess.run([
+                                        "ffmpeg", "-y", "-i", mp3_path, wav_path
+                                ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                                wav_files.append(wav_path)
+                                os.remove(mp3_path)
+
+                        except requests.RequestException as e:
+                                print(f"Chunk {i} failed: {e}")
+                                continue
+
+    # Create a file list for ffmpeg concat
+                concat_list_path = "audio/concat_list.txt"
+                with open(concat_list_path, "w") as f:
+                        for wav_file in wav_files:
+                                f.write(f"file '{os.path.abspath(wav_file)}'\n")
+
+                final_wav = "audio/converted_response.wav"
+
+    # Use ffmpeg to concatenate all .wav files
+                subprocess.run([
+                        "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_list_path,
+                        "-c", "copy", final_wav
+                ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    # Cleanup
+                for wav in wav_files:
+                        os.remove(wav)
+                        os.remove(concat_list_path)
+
+                return final_wav
+
         def play_audio(self, audio_file="audio/converted_response.wav"):
                 """
                 Plays the converted audio file and monitors for cancellation.
@@ -100,7 +206,7 @@ class APIHandler:
                         audio_file (str): Path to the audio file to play
                 """
                 if not os.path.exists(audio_file):
-                        print("Error: Audio file not found.")
+                        print(f"Error: Audio file not found: {audio_file}")
                         return
 
                 print("Audio data received successfully. Playing audio...")
@@ -121,8 +227,106 @@ class APIHandler:
                 # print(f"Playback Time: {time.time() - temp_time:.2f} seconds")
                 # print("Playback finished.")
 
-                # Clean up the converted file
-                os.remove(audio_file)
+                # Only delete the file if it's a temporary response file
+                if "converted_response.wav" in audio_file:
+                    os.remove(audio_file)
+        
+        def stream_tts_and_play(self, text):
+                url = "https://api.deepgram.com/v1/speak"
+                headers = {
+                "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
+                "Accept": "audio/mpeg"
+                }
+
+                if len(text) <= 200:  # or adjust threshold based on performance        
+                        self._process_and_play_single_chunk(text)
+                        return
+                chunks = self.split_text(text)
+                Path("audio").mkdir(exist_ok=True)
+                q = queue.Queue()
+                self.canceled = 0
+
+                def producer():
+                        for i, chunk in enumerate(chunks):
+                                if self.canceled:
+                                        break
+                                wav_path = f"audio/chunk_{i}.wav"
+                                try:
+                                        with self.session.post(url, headers=headers, data=chunk.encode("utf-8"), stream=True) as response:
+                                                response.raise_for_status()
+                                                ffmpeg_process = subprocess.Popen([
+                                                        "ffmpeg", "-y", "-threads", "1",
+                                                        "-f", "mp3", "-i", "pipe:0",
+                                                        wav_path
+                                                ], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+                                                for audio_chunk in response.iter_content(chunk_size=2048):
+                                                        if audio_chunk:
+                                                                ffmpeg_process.stdin.write(audio_chunk)
+
+                                                ffmpeg_process.stdin.close()
+                                                ffmpeg_process.wait()
+
+                                        q.put(wav_path)
+                                except requests.RequestException as e:
+                                        print(f"Chunk {i} failed: {e}")
+                                        continue
+
+                        q.put(None)  # Sentinel
+
+                def consumer():
+                        while True:
+                                wav_path = q.get()
+                                if wav_path is None:
+                                        break
+                                self._play_chunk(wav_path)
+
+                threading.Thread(target=producer, daemon=True).start()
+                consumer()  # This stays in the main thread so it can monitor GPIO
+
+        def _play_chunk(self, wav_path):
+                print(f"Playing {wav_path}...")
+                if not os.path.exists(wav_path):
+                        print(f"Error: {wav_path} not found.")
+                        return
+
+                audio_process = subprocess.Popen(["aplay", "-q", wav_path])
+                while audio_process.poll() is None:
+                        # GPIO cancel check could be added here
+                        time.sleep(0.1)
+                audio_process.wait()
+                os.remove(wav_path)
+
+        def _process_and_play_single_chunk(self, text):
+                url = "https://api.deepgram.com/v1/speak"
+                headers = {
+                        "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
+                        "Accept": "audio/mpeg"
+                }
+
+                wav_path = "audio/quick_response.wav"
+                try:
+                        with self.session.post(url, headers=headers, data=text.encode("utf-8"), stream=True) as response:
+                                response.raise_for_status()
+
+                                ffmpeg_process = subprocess.Popen([
+                                        "ffmpeg", "-y", "-threads", "1",
+                                        "-f", "mp3", "-i", "pipe:0",
+                                        wav_path
+                                ], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+                                for audio_chunk in response.iter_content(chunk_size=2048):
+                                        if audio_chunk:
+                                                ffmpeg_process.stdin.write(audio_chunk)
+
+                                ffmpeg_process.stdin.close()
+                                ffmpeg_process.wait()
+
+                        self._play_chunk(wav_path)
+
+                except requests.RequestException as e:
+                        print(f"Single chunk failed: {e}")
+
 
         @timed
         def audio_to_text(self, file_path="audio/audio.wav"):
@@ -166,7 +370,7 @@ class APIHandler:
                                 print(f"Error: {response.status_code} - {response.text}")
                                 return None
 
-        @timed
+
         def gpt_request(self, transcript):
                 """
                         Performs GPT API Request with a custom prompt returning text response
@@ -191,8 +395,19 @@ class APIHandler:
                         print("GPT-4o-mini Response: ", response)
                         return response
                 return None
+        
+        def gpt_stream_request(self, transcript):
+                """
+                Performs GPT API Request with a custom prompt returning text response
 
-        @timed
+                Parameters:
+                        transcript (str): User prompt / transcript of user speech
+
+                Returns:
+                str: GPT text response if successful, None otherwise.
+                """
+
+
         def gpt_image_request(self, transcript, photo_path="images/temp_image.jpg"):
                 """
                 Sends an image and a text prompt to the GPT API and returns the text response.
