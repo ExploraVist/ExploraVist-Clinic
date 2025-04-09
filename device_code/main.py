@@ -91,7 +91,7 @@ def main():
 
                 # Check that pin is low
                 check_gpio_state(GPIO.HIGH,AMP_SD_PIN)
-                time.sleep(2) 
+                # time.sleep(2) 
 
                 # Convert LLM Response to Audio
 
