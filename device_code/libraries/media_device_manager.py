@@ -20,10 +20,10 @@ class MediaDeviceManager:
         self.camera.start()
         
         # Audio parameters
-        self.CHUNK = 44100
+        self.CHUNK = 1024
         self.FORMAT = pyaudio.paInt16
         self.CHANNELS = 1
-        self.RATE = 44100
+        self.RATE = 16000
         self.is_recording = False
         self.audio_thread = None
     
