@@ -146,7 +146,7 @@ def main():
                 #api_handler.play_audio()
 
 
-                api_handler.speak_and_play_tts(text_response)
+                api_handler.stream_tts_and_play(text_response)
                 
 
             elif button_pressed == 1: # Custom Prompt Only
