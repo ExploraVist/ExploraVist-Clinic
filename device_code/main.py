@@ -8,14 +8,7 @@ import time
 
 
 def main():
-    # Initialize classes
-    sys_config = SystemConfig()
-    if not sys_config.check_system_ready():
-        print("System not ready. Exiting.")
-        return
-    print(config)
-    device = MediaDeviceManager()
-    api_handler = APIHandler(config=config) 
+    # Initialize GPIO first
     GPIO.setwarnings(False) # Ignore warning for now
     GPIO.setmode(GPIO.BCM)  # Use physical pin numbering
 
@@ -23,6 +16,16 @@ def main():
     GPIO.setup(22, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     # Set pin 23 to pul up (normally closed)
     GPIO.setup(23, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+    # Initialize classes
+    sys_config = SystemConfig()
+    if not sys_config.check_system_ready():
+        print("System not ready. Exiting.")
+        GPIO.cleanup()  # Clean up GPIO before exiting
+        return
+    print(config)
+    device = MediaDeviceManager()
+    api_handler = APIHandler(config=config) 
 
     restart = 0 #TODO implement an exit/restart mechanism
     default_prompt = "Describe what you see in front of you"
@@ -98,6 +101,7 @@ def main():
 
     # Clean up resources
     device.close()
+    GPIO.cleanup()  # Clean up GPIO before exiting
 
 if __name__ == '__main__':
     main()
