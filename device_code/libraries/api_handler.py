@@ -110,7 +110,7 @@ class APIHandler:
 
                 # Monitor GPIO 22 to cancel playback
                 while audio_process.poll() is None:
-                        if GPIO.input(22) == GPIO.LOW or GPIO.input(23) == GPIO.LOW:  # Button is pressed
+                        if GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:  # Button is pressed
                                 print("Button pressed, stopping audio playback.")
                                 audio_process.terminate()
                                 self.canceled = 1
