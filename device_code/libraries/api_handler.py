@@ -22,6 +22,9 @@ import threading
 import time
 from scipy.signal import resample
 
+from PIL import Image
+from functools import lru_cache
+
 
 def encode_image(image_path):
         with open(image_path, "rb") as image_file:
@@ -185,7 +188,7 @@ class APIHandler:
                         on_close=on_close
                 )
                 ws.run_forever()
-                
+
         def text_to_speech(self, text):
                 """
                 Converts text to speech using the Deepgram TTS API and saves the audio file.
@@ -568,6 +571,83 @@ class APIHandler:
                 message_content = response.choices[0].message.content
                 print(f"GPT-4o-mini Response: {message_content}")
                 return(message_content)
+        
+        def resize_image(self, image_path, max_size=512):
+                """
+                Resizes the image to fit within max_size (pixels) and returns new path.
+                """
+                os.makedirs("images", exist_ok=True)
+                resized_path = "images/resized_temp.jpg"
+                img = Image.open(image_path)
+                img.thumbnail((max_size, max_size))
+                img.save(resized_path, "JPEG")
+                return resized_path
+        
+        @lru_cache(maxsize=5)
+        def encode_image_cached(image_path):
+                """
+                Returns base64-encoded string of image (cached).
+                """
+                with open(image_path, "rb") as image_file:
+                        return base64.b64encode(image_file.read()).decode('utf-8')
+        
+
+        def gpt_image_request2(self, transcript, photo_path="images/temp_image.jpg"):
+                """
+                Sends an image and a text prompt to the GPT API and returns the text response.
+
+                Parameters:
+                        photo_path (str): Path to the image file to be sent.
+                        transcript (str): Text prompt or description for the image.
+
+                Returns:
+                str: The GPT model's response text.
+                """
+        # Path to # ✅ Resize image for performance
+                resized_path = self.resize_image(photo_path)
+
+    # ✅ Encode resized image using cached method
+                base64_image = self.encode_image_cached(resized_path)
+
+                response = self.client.chat.completions.create(
+                        messages=[
+                                {
+                                        "role": "user",
+                                        "content": [
+                                                {
+                                                        "type": "text",
+                                                        "text": transcript,
+                                                },
+                                                {
+                                                        "type": "image_url",
+                                                        "image_url": {
+                                                                "url":  f"data:image/jpeg;base64,{base64_image}"
+                                                                },
+                                                },
+                                        ],
+                                }
+                        ],
+                )
+
+                print("⚡ Streaming GPT-4o response...")
+                response_text = ""
+                response = self.client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=messages,
+                        stream=True,
+                        max_tokens=max_tokens
+                )
+
+                for chunk in response:
+                        delta = chunk.choices[0].delta
+                        if hasattr(delta, "content"):
+                                content = delta.content
+                                print(content, end="", flush=True)
+                                response_text += content
+
+                print()  # new line after stream
+                return response_text
+        
 
         
 
