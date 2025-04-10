@@ -99,7 +99,7 @@ def main():
 
                 end = time.time()
                 #api_handler.stream_tts(text_response)
-                api_handler.stream_tts_and_play(text_response)
+                #api_handler.stream_tts_and_play(text_response)
                 print ("text to speech")
                 print (end, begin, end-begin)
                 
