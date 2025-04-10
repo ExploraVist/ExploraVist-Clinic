@@ -431,6 +431,10 @@ class APIHandler:
                 os.remove(wav_path)
 
         def _process_and_play_single_chunk(self, text):
+                if not text.strip():
+                        print("⚠️ Skipping empty TTS chunk")
+                return
+        
                 url = "https://api.deepgram.com/v1/speak"
                 headers = {
                         "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
