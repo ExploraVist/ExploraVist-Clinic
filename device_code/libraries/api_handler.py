@@ -113,14 +113,22 @@ class APIHandler:
                                         print("🎙️ Mic error:", e)
 
                                 threading.Thread(target=record_and_send, daemon=True).start()
+                def on_message(ws, message):
+                        try:
+                                msg = json.loads(message)
+                                transcript = msg.get("channel", {}).get("alternatives", [{}])[0].get("transcript", "")
+                                if transcript:
+                                        print("🗣️", transcript)
+                        except Exception as e:
+                                print("❗ Error parsing message:", e)
 
                 ws = websocket.WebSocketApp(DG_URL,
-                                            header=[f"Authorization: Token {self.DEEPGRAM_API_KEY}"],
-                                            on_open=on_open,
-                                            on_message=on_message,
-                                            on_error=on_error,
-                                            on_close=on_close)
-
+                        "wss://api.deepgram.com/v1/listen?punctuate=true",
+                        header=[f"Authorization: Token {self.DEEPGRAM_API_KEY}"],
+                        on_open=on_open,
+                        on_message=on_message,
+                        on_error=lambda ws, err: print("WebSocket error:", err),
+                        on_close=lambda ws, code, msg: print("🔌 Connection closed")
                 ws.run_forever()
 
         def text_to_speech(self, text):
