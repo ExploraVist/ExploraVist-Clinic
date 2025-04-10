@@ -112,7 +112,7 @@ class APIHandler:
                         except Exception as e:
                                 print("❗ Error parsing message:", e)
 
-                ws = websocket.WebSocketApp(DG_URL,
+                ws = websocket.WebSocketApp(
                         DG_URL,
                         header = header,
                         on_open=on_open,
