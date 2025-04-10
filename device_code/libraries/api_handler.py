@@ -640,8 +640,9 @@ class APIHandler:
                         delta = chunk.choices[0].delta
                         if hasattr(delta, "content"):
                                 content = delta.content
-                                print(content, end="", flush=True)
-                                response_text += content
+                                if content:
+                                        print(content, end="", flush=True)
+                                        response_text += content
 
                 print()  # new line after stream
                 return response_text
