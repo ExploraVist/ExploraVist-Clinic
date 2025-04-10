@@ -91,18 +91,28 @@ class APIHandler:
                         print("🎤 Connected to Deepgram")
                         def record_and_send():
                                 try:
+                                        # Auto-detect sample rate
                                         device_info = sd.query_devices(kind='input')
                                         input_rate = int(device_info['default_samplerate'])
+                                        print(f"Using input sample rate: {input_rate} Hz")
 
+                                        # Start audio input stream
                                         with sd.InputStream(samplerate=input_rate, channels=1, dtype='int16') as stream:
                                                 while True:
                                                         data, _ = stream.read(1024)
-                                                        resampled = resample(data, int(len(data) * 16000 / 44100)).astype('int16')
-                                                        ws.send(resampled.tobytes(), opcode=websocket.ABNF.OPCODE_BINARY)
-                                except Exception as e:
-                                        print("Mic error:", e)
 
-                        threading.Thread(target=record_and_send, daemon=True).start()
+                                                # If there's no input (mic unplugged), skip
+                                                        if data is None or len(data) == 0:
+                                                                continue
+
+                                                # Resample to 16000 Hz for Deepgram
+                                                        resampled = resample(data, int(len(data) * 16000 / input_rate)).astype('int16')
+                                                        ws.send(resampled.tobytes(), opcode=websocket.ABNF.OPCODE_BINARY)
+
+                                except Exception as e:
+                                        print("🎙️ Mic error:", e)
+
+                                threading.Thread(target=record_and_send, daemon=True).start()
 
                 ws = websocket.WebSocketApp(DG_URL,
                                             header=[f"Authorization: Token {self.DEEPGRAM_API_KEY}"],
