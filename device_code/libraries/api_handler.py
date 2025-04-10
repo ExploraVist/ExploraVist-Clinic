@@ -80,14 +80,20 @@ class APIHandler:
                         def send_chunks():
                                 try:
                                         chunk_size = 1024
+                                        frame_rate = wf.getframerate()
+
                                         while True:
                                                 data = wf.readframes(chunk_size)
                                                 if not data:
                                                         break
                                                 ws.send(data, opcode=websocket.ABNF.OPCODE_BINARY)
-                                                time.sleep(chunk_size / wf.getframerate())  # simulate real-time pacing
+
+                                                if simulate_realtime:
+                                                        time.sleep(chunk_size / frame_rate)
+
                                         print("✅ Finished streaming WAV file")
                                         ws.close()
+
                                 except Exception as e:
                                         print("❌ Error sending audio:", e)
 

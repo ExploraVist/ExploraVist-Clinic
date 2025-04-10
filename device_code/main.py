@@ -111,14 +111,13 @@ def main():
             if button_pressed == 2:   # Image with Custom Prompt
                 # Take image
                 device.capture_image()
-
+                api_handler.play_audio("audio_files/start_sound.wav")
                 # Speech to Text
                 transcript = api_handler.stream_wav_file_to_deepgram("audio/audio.wav")
                 temp_prompt = context_window + f"Current Question: {transcript} \n"
 
 
                 # Play Starting Sound
-                api_handler.play_audio("audio_files/start_sound.wav")
 
 
                 # Make LLM API Call with Custom Prompt
