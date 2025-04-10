@@ -93,7 +93,10 @@ class APIHandler:
 
                                                 # If there's no input (mic unplugged), skip
                                                         if data is None or len(data) == 0:
+                                                                print("⚠️ No mic data")
                                                                 continue
+
+                                                        print("📦 Sending audio chunk")
 
                                                 # Resample to 16000 Hz for Deepgram
                                                         resampled = resample(data, int(len(data) * 16000 / input_rate)).astype('int16')
