@@ -784,7 +784,7 @@ class APIHandler:
                                 if " " in word_buffer:
                                         words = word_buffer.strip().split()
                                         for word in words[:-1]:
-                                        self.audio_queue.put(word.strip())
+                                                self.audio_queue.put(word.strip())
                                         word_buffer = words[-1] if words else ""
 
     # Final word
