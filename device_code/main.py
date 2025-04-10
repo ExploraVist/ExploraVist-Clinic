@@ -82,7 +82,7 @@ def main():
 
                 # Make LLM API Call
                 begin = time.time()
-                text_response = api_handler.gpt_image_request(temp_prompt)
+                text_response = api_handler.gpt_image_request2(temp_prompt)
                 context_window += f"USER: {default_prompt} \n GPT: {text_response} \n"
 
                 # Check that pin is low
@@ -124,7 +124,7 @@ def main():
 
                 # Make LLM API Call with Custom Prompt
                 begin = time.time()
-                text_response = api_handler.gpt_image_request(temp_prompt)
+                text_response = api_handler.gpt_image_request2(temp_prompt)
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
                 # Check that pin is low
