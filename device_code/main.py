@@ -59,13 +59,13 @@ def main():
         start_time = time.time()
         while GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:
             api_handler.live_transcription_from_mic()
-            device.start_recording()
+            #device.start_recording()
             if GPIO.input(22) == GPIO.LOW:
                 button_pressed = 2
             elif GPIO.input(27) == GPIO.LOW:
                 button_pressed = 1
 
-        device.stop_recording()
+        #device.stop_recording()
         time_pressed = time.time() - start_time
 
         if time_pressed <= 1.6 and time_pressed >= 0.1: # Image Description Using Default Prompt

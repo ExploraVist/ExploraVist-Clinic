@@ -90,7 +90,7 @@ class APIHandler:
                         print("🎤 Connected to Deepgram")
                         def record_and_send():
                                 try:
-                                        with sd.InputStream(samplerate=16000, channels=1, dtype='int16') as stream:
+                                        with sd.InputStream(samplerate=44100, channels=1, dtype='int16') as stream:
                                                 while True:
                                                         data, _ = stream.read(1024)
                                                         ws.send(data.tobytes(), opcode=websocket.ABNF.OPCODE_BINARY)
