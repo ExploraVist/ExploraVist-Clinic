@@ -9,6 +9,14 @@ import threading
 import pyttsx3
 import random
 
+def check_gpio_state(expected_state, AMP_SD):
+    """Checks if GPIO state matches the expected state."""
+    actual_state = GPIO.input(AMP_SD)
+    if actual_state == expected_state:
+        print(f"✅ GPIO {AMP_SD} is {'HIGH (ON)' if actual_state else 'LOW (OFF)'} as expected.")
+    else:
+        print(f"❌ ERROR: GPIO {AMP_SD} is {'HIGH (ON)' if actual_state else 'LOW (OFF)'} but expected {'HIGH (ON)' if expected_state else 'LOW (OFF)'}!")
+
 
 def main():
     # Initialize GPIO first
@@ -153,7 +161,7 @@ def main():
                     api_handler.play_audio("audio_files/almostthere.wav")
                 else:
                     continue
-                
+
                 api_handler.stream_tts_and_play(text_response)
                 print ("text to speech")
                 print (end, begin, end-begin)
