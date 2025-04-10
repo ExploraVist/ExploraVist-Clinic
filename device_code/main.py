@@ -157,8 +157,6 @@ def main():
                     api_handler.play_audio("audio_files/letssee.wav")
                 elif choice == 3:
                     api_handler.play_audio("audio_files/almostthere.wav")
-                else:
-                    continue
 
                 api_handler.stream_tts_and_play(text_response)
                 print ("text to speech")
