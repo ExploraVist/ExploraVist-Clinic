@@ -70,9 +70,7 @@ class APIHandler:
         
         def live_transcription_from_mic(self):
                 DG_URL = "wss://api.deepgram.com/v1/listen?punctuate=true"
-                headers = {
-                        "Authorization": f"Token {self.DEEPGRAM_API_KEY}"
-                }
+                header = [f"Authorization: Token {self.DEEPGRAM_API_KEY}"]
                 def on_message(ws, message):
                         try:
                                 msg = json.loads(message)
@@ -124,7 +122,7 @@ class APIHandler:
 
                 ws = websocket.WebSocketApp(DG_URL,
                         DG_URL,
-                        headers = headers,
+                        headers = header,
                         on_open=on_open,
                         on_message=on_message,
                         on_error=lambda ws, err: print("WebSocket error:", err),
