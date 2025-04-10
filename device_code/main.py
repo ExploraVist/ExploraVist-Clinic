@@ -113,7 +113,8 @@ def main():
                 device.capture_image()
                 api_handler.play_audio("audio_files/start_sound.wav")
                 # Speech to Text
-                transcript = api_handler.stream_wav_file_to_deepgram("audio/audio.wav")
+                #transcript = api_handler.stream_wav_file_to_deepgram("audio/audio.wav")
+                transcript =  api_handler.audio_to_text("audio/audio.wav")
                 temp_prompt = context_window + f"Current Question: {transcript} \n"
 
 
