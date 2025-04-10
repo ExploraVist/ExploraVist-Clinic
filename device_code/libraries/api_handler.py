@@ -11,6 +11,7 @@ from pathlib import Path
 import threading
 import queue
 import time
+import random
 
 from libraries.metrics import timed
 import re
@@ -378,6 +379,20 @@ class APIHandler:
                 Path("audio").mkdir(exist_ok=True)
                 q = queue.Queue()
                 self.canceled = 0
+
+                intro_choices = {
+                        1: "audio_files/thinking.wav",
+                        2: "audio_files/letssee.wav",
+                        3: "audio_files/almostthere.wav"
+                }
+
+                choice = random.choice([1, 2, 3, 4, 5, 6])
+                if choice in intro_choices:
+                        threading.Thread(
+                        target=self.play_audio,
+                        args=(intro_choices[choice],),
+                        daemon=True
+                ).start()
 
                 def producer():
                         for i, chunk in enumerate(chunks):
