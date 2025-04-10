@@ -59,8 +59,8 @@ def main():
         start_time = time.time()
         while GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:
             #api_handler.live_transcription_from_mic()
-            device.start_recording()
             api_handler.stream_live_recording_to_deepgram()
+            device.start_recording()
             if GPIO.input(22) == GPIO.LOW:
                 button_pressed = 2
             elif GPIO.input(27) == GPIO.LOW:
