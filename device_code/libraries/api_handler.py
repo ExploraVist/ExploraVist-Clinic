@@ -71,14 +71,6 @@ class APIHandler:
         def live_transcription_from_mic(self):
                 DG_URL = "wss://api.deepgram.com/v1/listen?punctuate=true"
                 header = [f"Authorization: Token {self.DEEPGRAM_API_KEY}"]
-                def on_message(ws, message):
-                        try:
-                                msg = json.loads(message)
-                                transcript = msg.get("channel", {}).get("alternatives", [{}])[0].get("transcript", "")
-                                if transcript:
-                                        print("🗣️", transcript)
-                        except Exception as e:
-                                print("Error parsing message:", e)
                 def on_error(ws, error):
                         print("WebSocket error:", error)
 
@@ -125,8 +117,8 @@ class APIHandler:
                         header = header,
                         on_open=on_open,
                         on_message=on_message,
-                        on_error=lambda ws, err: print("WebSocket error:", err),
-                        on_close=lambda ws, code, msg: print("🔌 Connection closed")
+                        on_error=on_error,
+                        on_close=on_close
                 )
                 ws.run_forever()
 
