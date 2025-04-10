@@ -642,7 +642,71 @@ class APIHandler:
                                 content = delta.content
                                 if content:
                                         print(content, end="", flush=True)
-                                        self.stream_tts_and_play(content)
+                                        response_text += content
+
+                print()  # new line after stream
+                return response_text
+        
+        def gpt_image_request3(self, transcript, photo_path="images/temp_image.jpg"):
+                """
+                Sends an image and a text prompt to the GPT API and returns the text response.
+
+                Parameters:
+                        photo_path (str): Path to the image file to be sent.
+                        transcript (str): Text prompt or description for the image.
+
+                Returns:
+                str: The GPT model's response text.
+                """
+        # Path to # ✅ Resize image for performance
+                resized_path = self.resize_image(photo_path)
+
+    # ✅ Encode resized image using cached method
+                base64_image = encode_image_cached(resized_path)
+                messages=[
+                                {
+                                        "role": "user",
+                                        "content": [
+                                                {
+                                                        "type": "text",
+                                                        "text": transcript,
+                                                },
+                                                {
+                                                        "type": "image_url",
+                                                        "image_url": {
+                                                                "url":  f"data:image/jpeg;base64,{base64_image}"
+                                                                },
+                                                },
+                                        ],
+                                }
+                        ]
+                
+                print("⚡ Streaming GPT-4o response...")
+
+                response_text = ""
+                response = self.client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=messages,
+                        stream=True
+                )
+                buffer = ""
+                for chunk in response:
+                        delta = chunk.choices[0].delta
+                        if hasattr(delta, "content"):
+                                content = delta.content
+                                if content:
+                                        print(content, end="", flush=True)
+                                        response_text += content
+                                        if any(p in content for p in ".!?") or len(buffer) > 30:
+                                                threading.Thread(
+                                                        target=self._process_and_play_single_chunk,
+                                                        args=(buffer.strip(),),
+                                                        daemon=True
+                                                ).start()
+                                                buffer = ""
+                if buffer:
+                        threading.Thread(target=self._process_and_play_single_chunk, args=(buffer.strip(),), daemon=True).start()
+
                 print()  # new line after stream
                 return response_text
         
