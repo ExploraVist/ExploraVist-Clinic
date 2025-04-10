@@ -433,8 +433,7 @@ class APIHandler:
         def _process_and_play_single_chunk(self, text):
                 if not text.strip():
                         print("⚠️ Skipping empty TTS chunk")
-                return
-        
+                        return
                 url = "https://api.deepgram.com/v1/speak"
                 headers = {
                         "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
@@ -697,19 +696,20 @@ class APIHandler:
                 buffer = ""
                 for chunk in response:
                         delta = chunk.choices[0].delta
-                        if hasattr(delta, "content"):
-                                content = delta.content
-                                if content:
-                                        print(content, end="", flush=True)
-                                        response_text += content
-                                        if any(p in content for p in ".!?") or len(buffer) > 30:
-                                                threading.Thread(
-                                                        target=self._process_and_play_single_chunk,
-                                                        args=(buffer.strip(),),
-                                                        daemon=True
-                                                ).start()
-                                                buffer = ""
-                if buffer:
+                        content = getattr(delta, "content", None)
+                        if content and content.strip(): 
+                                print(content, end="", flush=True)
+                                response_text += content
+                                buffer += content
+                                if any(p in content for p in ".!?") or len(buffer) > 30:
+                                        threading.Thread(
+                                                target=self._process_and_play_single_chunk,
+                                                args=(buffer.strip(),),
+                                                daemon=True
+                                        ).start()
+                                        buffer = ""
+                if buffer.strip():
+                        print(f"\n🎤 Final speaking chunk: {buffer.strip()}")
                         threading.Thread(target=self._process_and_play_single_chunk, args=(buffer.strip(),), daemon=True).start()
 
                 print()  # new line after stream
