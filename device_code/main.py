@@ -7,15 +7,7 @@ import libraries.config
 import time
 import threading
 import pyttsx3
-
-def check_gpio_state(expected_state, AMP_SD):
-    """Checks if GPIO state matches the expected state."""
-    actual_state = GPIO.input(AMP_SD)
-    if actual_state == expected_state:
-        print(f"✅ GPIO {AMP_SD} is {'HIGH (ON)' if actual_state else 'LOW (OFF)'} as expected.")
-    else:
-        print(f"❌ ERROR: GPIO {AMP_SD} is {'HIGH (ON)' if actual_state else 'LOW (OFF)'} but expected {'HIGH (ON)' if expected_state else 'LOW (OFF)'}!")
-
+import random
 
 
 def main():
@@ -69,6 +61,8 @@ def main():
         device.stop_recording()
         time_pressed = time.time() - start_time
 
+        choice = random.choice([1, 2, 3, 4, 5, 6, 7])
+
         if time_pressed <= 1.6 and time_pressed >= 0.1: # Image Description Using Default Prompt
             
             # Image Response
@@ -98,6 +92,16 @@ def main():
                 # Convert LLM Response to Audio
 
                 end = time.time()
+                if choice == 1:
+                    api_handler.play_audio("audio_files/thinking.wav")
+                elif choice == 2:
+                    api_handler.play_audio("audio_files/letssee.wav")
+                elif choice == 3:
+                    api_handler.play_audio("audio_files/almostthere.wav")
+                else:
+                    continue
+            
+
                 #api_handler.stream_tts(text_response)
                 api_handler.stream_tts_and_play(text_response)
                 print ("text to speech")
@@ -141,6 +145,15 @@ def main():
                 # Convert LLM Response to Audio
                 end = time.time()
                 #api_handler.stream_tts(text_response)
+                if choice == 1:
+                    api_handler.play_audio("audio_files/thinking.wav")
+                elif choice == 2:
+                    api_handler.play_audio("audio_files/letssee.wav")
+                elif choice == 3:
+                    api_handler.play_audio("audio_files/almostthere.wav")
+                else:
+                    continue
+                
                 api_handler.stream_tts_and_play(text_response)
                 print ("text to speech")
                 print (end, begin, end-begin)
