@@ -14,6 +14,12 @@ import time
 
 from libraries.metrics import timed
 import re
+import sounddevice as sd
+import numpy as np
+import websocket
+import json
+import threading
+import time
 
 
 def encode_image(image_path):
@@ -60,6 +66,47 @@ class APIHandler:
                         "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
                         "Content-Type": "text/plain"
                 })
+        
+        def live_transcription_from_mic(self):
+                DG_URL = "wss://api.deepgram.com/v1/listen?punctuate=true"
+                headers = {
+                        "Authorization": f"Token {self.DEEPGRAM_API_KEY}"
+                }
+                def on_message(ws, message):
+                        try:
+                                msg = json.loads(message)
+                                transcript = msg.get("channel", {}).get("alternatives", [{}])[0].get("transcript", "")
+                                if transcript:
+                                        print("🗣️", transcript)
+                        except Exception as e:
+                                print("Error parsing message:", e)
+                def on_error(ws, error):
+                        print("WebSocket error:", error)
+
+                def on_close(ws, code, reason):
+                        print("🔌 Connection closed")
+
+                def on_open(ws):
+                        print("🎤 Connected to Deepgram")
+                        def record_and_send():
+                                try:
+                                        with sd.InputStream(samplerate=16000, channels=1, dtype='int16') as stream:
+                                                while True:
+                                                        data, _ = stream.read(1024)
+                                                        ws.send(data.tobytes(), opcode=websocket.ABNF.OPCODE_BINARY)
+                                except Exception as e:
+                                        print("Mic error:", e)
+
+                        threading.Thread(target=record_and_send, daemon=True).start()
+
+                ws = websocket.WebSocketApp(DG_URL,
+                                            header=[f"Authorization: Token {self.DEEPGRAM_API_KEY}"],
+                                            on_open=on_open,
+                                            on_message=on_message,
+                                            on_error=on_error,
+                                            on_close=on_close)
+
+                ws.run_forever()
 
         def text_to_speech(self, text):
                 """
