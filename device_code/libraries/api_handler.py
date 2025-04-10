@@ -434,6 +434,7 @@ class APIHandler:
                 url = "https://api.deepgram.com/v1/speak"
                 headers = {
                         "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
+                        "Content-Type": "text/plain",
                         "Accept": "audio/mpeg"
                 }
 
