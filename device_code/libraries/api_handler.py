@@ -68,6 +68,55 @@ class APIHandler:
                         "Content-Type": "text/plain"
                 })
         
+        def stream_wav_file_to_deepgram(self, wav_path="audio/audio.wav"):
+
+                DG_URL = "wss://api.deepgram.com/v1/listen?punctuate=true"
+                header = [f"Authorization: Token {self.DEEPGRAM_API_KEY}"]
+
+                def on_open(ws):
+                        print("🔁 Streaming WAV file...")
+                        wf = wave.open(wav_path, 'rb')
+
+                        def send_chunks():
+                                try:
+                                        chunk_size = 1024
+                                        while True:
+                                                data = wf.readframes(chunk_size)
+                                                if not data:
+                                                        break
+                                                ws.send(data, opcode=websocket.ABNF.OPCODE_BINARY)
+                                                time.sleep(chunk_size / wf.getframerate())  # simulate real-time pacing
+                                        print("✅ Finished streaming WAV file")
+                                        ws.close()
+                                except Exception as e:
+                                        print("❌ Error sending audio:", e)
+
+                        threading.Thread(target=send_chunks, daemon=True).start()
+
+                def on_message(ws, message):
+                        try:
+                                msg = json.loads(message)
+                                transcript = msg.get("channel", {}).get("alternatives", [{}])[0].get("transcript", "")
+                                if transcript:
+                                        print("🗣️", transcript)
+                        except Exception as e:
+                                print("❗ Error parsing transcript:", e)
+
+
+                def on_close(ws, code, reason):
+                        print("🔌 Connection closed")
+
+                websocket.enableTrace(False)
+                ws = websocket.WebSocketApp(
+                        DG_URL,
+                        header=header,
+                        on_open=on_open,
+                        on_message=on_message,
+                        on_close=on_close
+                )
+                ws.run_forever()
+
+                
         def live_transcription_from_mic(self):
                 DG_URL = "wss://api.deepgram.com/v1/listen?punctuate=true"
                 header = [f"Authorization: Token {self.DEEPGRAM_API_KEY}"]
