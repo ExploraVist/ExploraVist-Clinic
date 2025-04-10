@@ -14,6 +14,11 @@ import time
 
 from libraries.metrics import timed
 import re
+import asyncio
+import sounddevice as sd
+import websockets
+import json
+import numpy as np
 
 def encode_image(image_path):
         with open(image_path, "rb") as image_file:
@@ -39,11 +44,6 @@ def segment_text_by_sentence(text):
     return segments
 
 
-DEEPGRAM_API_KEY = "3d85ba05e27a54d04228f61d2b231c97d00b926a"
-if not DEEPGRAM_API_KEY:
-    raise ValueError("Please set the DEEPGRAM_API_KEY environment variable.")
-
-
 class APIHandler:
     #TODO incorporate a requests.Session() for Keep-Alive, Ex:
     # self.session = requests.Session()  # Use a session for keep-alive
@@ -64,6 +64,32 @@ class APIHandler:
                         "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
                         "Content-Type": "text/plain"
                 })
+
+        def live_transcription_from_mic(self):
+                SAMPLE_RATE = 16000
+                CHUNK_SIZE = 512
+                DG_URL = f"wss://api.deepgram.com/v1/listen?punctuate=true&interim_results=true"
+                headers = {
+                        "Authorization": f"Token {self.DEEPGRAM_API_KEY}"
+                }
+                async def microphone_stream():
+                        try:
+                                async with websockets.connect(DG_URL, extra_headers=headers) as ws:
+                                        print("🔊 Connected to Deepgram via WebSocket")
+                                        def callback(indata, frames, time, status):
+                                                if status:
+                                                        print("Mic Status:", status)
+                                                audio_data = (indata * 32767).astype(np.int16).tobytes()
+                                                asyncio.run_coroutine_threadsafe(ws.send(audio_data), asyncio.get_event_loop())
+                                        with sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype='float32', callback=callback, blocksize=CHUNK_SIZE):
+                                                async for message in ws:
+                                                        msg = json.loads(message)
+                                                        transcript = msg.get("channel", {}).get("alternatives", [{}])[0].get("transcript", "")
+                                                        if transcript:
+                                                                print("transcript", transcript)
+                        except Exception as e:
+                                print("Error with Deepgram live transcription:", e)
+                asyncio.run(microphone_stream())
 
         def text_to_speech(self, text):
                 """
