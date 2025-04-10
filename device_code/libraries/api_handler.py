@@ -91,7 +91,10 @@ class APIHandler:
                         print("🎤 Connected to Deepgram")
                         def record_and_send():
                                 try:
-                                        with sd.InputStream(samplerate=44100, channels=1, dtype='int16') as stream:
+                                        device_info = sd.query_devices(kind='input')
+                                        input_rate = int(device_info['default_samplerate'])
+
+                                        with sd.InputStream(samplerate=input_rate, channels=1, dtype='int16') as stream:
                                                 while True:
                                                         data, _ = stream.read(1024)
                                                         resampled = resample(data, int(len(data) * 16000 / 44100)).astype('int16')
