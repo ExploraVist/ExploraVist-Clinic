@@ -123,8 +123,8 @@ class APIHandler:
                                 print("❗ Error parsing message:", e)
 
                 ws = websocket.WebSocketApp(DG_URL,
-                        "wss://api.deepgram.com/v1/listen?punctuate=true",
-                        header=[f"Authorization: Token {self.DEEPGRAM_API_KEY}"],
+                        DG_URL,
+                        headers = headers,
                         on_open=on_open,
                         on_message=on_message,
                         on_error=lambda ws, err: print("WebSocket error:", err),
