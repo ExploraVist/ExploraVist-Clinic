@@ -662,11 +662,21 @@ class APIHandler:
                 Returns:
                 str: The GPT model's response text.
                 """
-        # Path to # ✅ Resize image for performance
-                resized_path = self.resize_image(photo_path)
+                if not hasattr(self, "audio_queue"):
+                        self.audio_queue = queue.Queue()
 
-    # ✅ Encode resized image using cached method
+                        def audio_worker():
+                                while True:
+                                        text = self.audio_queue.get()
+                                        if text:
+                                                self._process_and_play_single_chunk(text)
+                                        self.audio_queue.task_done()
+                
+                        threading.Thread(target=audio_worker, daemon=True).start()
+
+                resized_path = self.resize_image(photo_path)
                 base64_image = encode_image_cached(resized_path)
+
                 messages=[
                                 {
                                         "role": "user",
@@ -688,29 +698,30 @@ class APIHandler:
                 print("⚡ Streaming GPT-4o response...")
 
                 response_text = ""
+                buffer = ""
+
                 response = self.client.chat.completions.create(
                         model="gpt-4o",
                         messages=messages,
                         stream=True
                 )
-                buffer = ""
+
                 for chunk in response:
                         delta = chunk.choices[0].delta
                         content = getattr(delta, "content", None)
+                        
                         if content and content.strip(): 
                                 print(content, end="", flush=True)
                                 response_text += content
                                 buffer += content
+
                                 if any(p in content for p in ".!?") or len(buffer) > 30:
-                                        threading.Thread(
-                                                target=self._process_and_play_single_chunk,
-                                                args=(buffer.strip(),),
-                                                daemon=True
-                                        ).start()
+                                        print(f"\n🎤 Queueing for TTS: {buffer.strip()}")
+                                        self.audio_queue.put(buffer.strip())
                                         buffer = ""
                 if buffer.strip():
                         print(f"\n🎤 Final speaking chunk: {buffer.strip()}")
-                        threading.Thread(target=self._process_and_play_single_chunk, args=(buffer.strip(),), daemon=True).start()
+                        self.audio_queue.put(buffer.strip())
 
                 print()  # new line after stream
                 return response_text
