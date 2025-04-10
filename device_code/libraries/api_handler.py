@@ -642,8 +642,7 @@ class APIHandler:
                                 content = delta.content
                                 if content:
                                         print(content, end="", flush=True)
-                                        response_text += content
-
+                                        self.stream_tts_and_play(content)
                 print()  # new line after stream
                 return response_text
         
