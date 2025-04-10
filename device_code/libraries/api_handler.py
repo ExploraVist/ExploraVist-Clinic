@@ -715,7 +715,7 @@ class APIHandler:
                                 response_text += content
                                 buffer += content
 
-                                if any(p in content for p in ".!?") or len(buffer) > 30:
+                                if any(p in content for p in ".!?") or len(buffer) > 150:
                                         print(f"\n🎤 Queueing for TTS: {buffer.strip()}")
                                         self.audio_queue.put(buffer.strip())
                                         buffer = ""
