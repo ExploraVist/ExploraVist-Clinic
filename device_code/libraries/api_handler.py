@@ -49,6 +49,15 @@ def segment_text_by_sentence(text):
 
     return segments
 
+@lru_cache(maxsize=5)
+def encode_image_cached(image_path):
+        """
+        Returns base64-encoded string of image (cached).
+        """
+        with open(image_path, "rb") as image_file:
+                return base64.b64encode(image_file.read()).decode('utf-8')
+        
+
 
 class APIHandler:
     #TODO incorporate a requests.Session() for Keep-Alive, Ex:
@@ -583,14 +592,6 @@ class APIHandler:
                 img.save(resized_path, "JPEG")
                 return resized_path
         
-        @lru_cache(maxsize=5)
-        def encode_image_cached(image_path):
-                """
-                Returns base64-encoded string of image (cached).
-                """
-                with open(image_path, "rb") as image_file:
-                        return base64.b64encode(image_file.read()).decode('utf-8')
-        
 
         def gpt_image_request2(self, transcript, photo_path="images/temp_image.jpg"):
                 """
@@ -607,7 +608,7 @@ class APIHandler:
                 resized_path = self.resize_image(photo_path)
 
     # ✅ Encode resized image using cached method
-                base64_image = self.encode_image_cached(resized_path)
+                base64_image = encode_image_cached(resized_path)
 
                 response = self.client.chat.completions.create(
                         messages=[
