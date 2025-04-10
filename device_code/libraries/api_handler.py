@@ -122,7 +122,7 @@ class APIHandler:
 
                 ws = websocket.WebSocketApp(DG_URL,
                         DG_URL,
-                        headers = header,
+                        header = header,
                         on_open=on_open,
                         on_message=on_message,
                         on_error=lambda ws, err: print("WebSocket error:", err),
