@@ -102,7 +102,7 @@ class APIHandler:
                                 except Exception as e:
                                         print("🎙️ Mic error:", e)
 
-                                threading.Thread(target=record_and_send, daemon=True).start()
+                        threading.Thread(target=record_and_send, daemon=True).start()
                 def on_message(ws, message):
                         try:
                                 msg = json.loads(message)
