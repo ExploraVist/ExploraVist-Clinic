@@ -152,30 +152,30 @@ class APIHandler:
                                 finally:
                                         print("🔁 Stopping arecord stream.")
                                         ws.close()
-                        def on_message(ws, message):
-                                try:
-                                        msg = json.loads(message)
-                                        transcript = msg.get("channel", {}).get("alternatives", [{}])[0].get("transcript", "")
-                                        if transcript:
+                def on_message(ws, message):
+                        try:
+                                msg = json.loads(message)
+                                transcript = msg.get("channel", {}).get("alternatives", [{}])[0].get("transcript", "")
+                                if transcript:
                                                 print("🗣️", transcript)
-                                except Exception as e:
-                                        print("❗ Error parsing message:", e)
-                        def on_close(ws, code, reason):
-                                print("🔌 Deepgram connection closed")
+                        except Exception as e:
+                                print("❗ Error parsing message:", e)
+                def on_close(ws, code, reason):
+                        print("🔌 Deepgram connection closed")
                         
-                        def on_error(ws, error):
-                                 print("WebSocket error:", error)
+                def on_error(ws, error):
+                        print("WebSocket error:", error)
 
-                        websocket.enableTrace(False)
-                        ws = websocket.WebSocketApp(
-                                DG_URL,
-                                header=header,
-                                on_open=on_open,
-                                on_message=on_message,
-                                on_error=on_error,
-                                on_close=on_close
-                        )
-                        ws.run_forever()
+                websocket.enableTrace(False)
+                ws = websocket.WebSocketApp(
+                        DG_URL,
+                        header=header,
+                        on_open=on_open,
+                        on_message=on_message,
+                        on_error=on_error,
+                        on_close=on_close
+                )
+                ws.run_forever()
         def text_to_speech(self, text):
                 """
                 Converts text to speech using the Deepgram TTS API and saves the audio file.
