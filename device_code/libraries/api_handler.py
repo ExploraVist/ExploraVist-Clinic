@@ -726,9 +726,73 @@ class APIHandler:
                 print()  # new line after stream
                 return response_text
         
+        def gpt_image_request_word_by_word(self, transcript, photo_path="images/temp_image.jpg"):
+                """
+                Streams GPT-4o word-by-word and speaks each word using Deepgram TTS.
+                """
+                # Start audio queue system if not already running
+                self.audio_queue = queue.Queue()
 
-        
+                def audio_worker():
+                        while True:
+                                word = self.audio_queue.get()
+                                if word and len(word.strip()) > 1:  # avoid 1-char like "a"
+                                        self._process_and_play_single_chunk(word)
+                                self.audio_queue.task_done()
 
+                threading.Thread(target=audio_worker, daemon=True).start()
+
+    # Prepare image and prompt
+                resized_path = self.resize_image(photo_path)
+                base64_image = encode_image_cached(resized_path)
+
+                messages = [
+                        {
+                                "role": "user",
+                                "content": [
+                                        {"type": "text", "text": transcript},
+                                        {
+                                                "type": "image_url",
+                                                "image_url": {
+                                                        "url": f"data:image/jpeg;base64,{base64_image}"
+                                                },
+                                        },
+                                ],
+                        }
+                ]
+
+                print("⚡ Streaming GPT-4o response word-by-word...")
+                response_text = ""
+
+                response = self.client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=messages,
+                        stream=True
+                )
+
+                word_buffer = ""
+                for chunk in response:
+                        delta = chunk.choices[0].delta
+                        content = getattr(delta, "content", None)
+
+                        if content and content.strip():
+                                print(content, end="", flush=True)
+                                response_text += content
+                                word_buffer += content
+
+            # Check for a space = end of word
+                                if " " in word_buffer:
+                                        words = word_buffer.strip().split()
+                                        for word in words[:-1]:
+                                        self.audio_queue.put(word.strip())
+                                        word_buffer = words[-1] if words else ""
+
+    # Final word
+                if word_buffer.strip():
+                        self.audio_queue.put(word_buffer.strip())
+
+                print()  # newline
+                return response_text
         class MemoryManager:
                 def __init__(self):
             # Current context window
