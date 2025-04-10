@@ -127,6 +127,10 @@ class APIHandler:
                 DG_URL = "wss://api.deepgram.com/v1/listen?punctuate=true"
                 header = [f"Authorization: Token {self.DEEPGRAM_API_KEY}"]
 
+                self.RATE = getattr(self, "RATE", 16000)             # 16kHz sample rate
+                self.CHANNELS = getattr(self, "CHANNELS", 1)         # Mono
+                self.FORMAT = getattr(self, "FORMAT", "S16_LE")      # 16-bit PCM
+
                 def on_open(ws):
                         print("🎤 Starting real-time arecord stream to Deepgram...")
 
