@@ -82,7 +82,7 @@ def main():
 
                 # Make LLM API Call
                 begin = time.time()
-                text_response = api_handler.gpt_image_request3(temp_prompt)
+                text_response = api_handler.gpt_image_request2(temp_prompt)
                 context_window += f"USER: {default_prompt} \n GPT: {text_response} \n"
 
                 # Check that pin is low
@@ -99,7 +99,7 @@ def main():
 
                 end = time.time()
                 #api_handler.stream_tts(text_response)
-                #api_handler.stream_tts_and_play(text_response)
+                api_handler.stream_tts_and_play(text_response)
                 print ("text to speech")
                 print (end, begin, end-begin)
                 
