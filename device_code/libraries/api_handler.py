@@ -14,10 +14,7 @@ import time
 
 from libraries.metrics import timed
 import re
-import websocket
-import threading
-import pyaudio
-import json
+
 
 def encode_image(image_path):
         with open(image_path, "rb") as image_file:
@@ -63,49 +60,6 @@ class APIHandler:
                         "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
                         "Content-Type": "text/plain"
                 })
-
-        def live_transcription_from_mic(self):
-                DEEPGRAM_URL = "wss://api.deepgram.com/v1/listen?punctuate=true"
-                headers = {
-                        "Authorization": f"Token {self.DEEPGRAM_API_KEY}"
-                }
-                def on_message(ws, message):
-                        try:
-                                msg = json.loads(message)
-                                transcript = msg.get("channel", {}).get("alternatives", [{}])[0].get("transcript", "")
-                                if transcript:
-                                        print("🗣️", transcript)
-                        except Exception as e:
-                                print("Error parsing message:", e)
-                def on_error(ws, error):
-                        print("WebSocket Error:", error)
-                def on_close(ws, close_status_code, close_msg):
-                        print("🔌 Connection closed")
-                def on_open(ws):
-                        print("🎤 Connected to Deepgram")
-                        p = pyaudio.PyAudio()
-
-                        stream = p.open(format=pyaudio.paInt16,
-                                        channels=1,
-                                        rate=16000,
-                                        input=True,
-                                        frames_per_buffer=1024)
-                def send_audio():
-                                try:
-                                        while True:
-                                                data = stream.read(1024, exception_on_overflow=False)
-                                                ws.send(data, opcode=websocket.ABNF.OPCODE_BINARY)
-                                except Exception as e:
-                                        print("Microphone error:", e)
-                threading.Thread(target=send_audio).start()
-                ws = websocket.WebSocketApp(DEEPGRAM_URL,
-                                            header=[f"Authorization: Token {self.DEEPGRAM_API_KEY}"],
-                                            on_message=on_message,
-                                            on_error=on_error,
-                                            on_close=on_close,
-                                            on_open=on_open)
-
-                ws.run_forever()
 
         def text_to_speech(self, text):
                 """
