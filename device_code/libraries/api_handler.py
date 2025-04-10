@@ -20,6 +20,7 @@ import websocket
 import json
 import threading
 import time
+from scipy.signal import resample
 
 
 def encode_image(image_path):
@@ -93,7 +94,8 @@ class APIHandler:
                                         with sd.InputStream(samplerate=44100, channels=1, dtype='int16') as stream:
                                                 while True:
                                                         data, _ = stream.read(1024)
-                                                        ws.send(data.tobytes(), opcode=websocket.ABNF.OPCODE_BINARY)
+                                                        resampled = resample(data, int(len(data) * 16000 / 44100)).astype('int16')
+                                                        ws.send(resampled.tobytes(), opcode=websocket.ABNF.OPCODE_BINARY)
                                 except Exception as e:
                                         print("Mic error:", e)
 
