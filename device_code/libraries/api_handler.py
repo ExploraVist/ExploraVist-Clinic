@@ -131,6 +131,7 @@ class APIHandler:
                 self.CHANNELS = getattr(self, "CHANNELS", 1)         # Mono
                 self.FORMAT = getattr(self, "FORMAT", "S16_LE")      # 16-bit PCM
 
+                websocket.enableTrace(True)
                 def on_open(ws):
                         print("🎤 Starting real-time arecord stream to Deepgram...")
 
@@ -144,18 +145,22 @@ class APIHandler:
                                                 "-f", self.FORMAT,
                                                 "-t", "raw"
                                         ]
+                                        print(f"🎙️ arecord command: {' '.join(cmd)}")
                                         arecord_proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 
-                                        while True:
-                                                data = arecord_proc.stdout.read(1024)
-                                                if not data:
-                                                        break
-                                                ws.send(data, opcode=websocket.ABNF.OPCODE_BINARY)
+                                        def log_arecord_errors():
+                                                for line in iter(arecord_proc.stderr.readline, b''):
+                                                        print("🛑 arecord error:", line.decode().strip())
+                                        threading.Thread(target=log_arecord_errors, daemon=True).start()
+                                
+
                                 except Exception as e:
                                         print("❌ Error streaming audio:", e)
                                 finally:
                                         print("🔁 Stopping arecord stream.")
                                         ws.close()
+                        threading.Thread(target=send_audio, daemon=True).start()
+
                 def on_message(ws, message):
                         try:
                                 msg = json.loads(message)
@@ -180,6 +185,7 @@ class APIHandler:
                         on_close=on_close
                 )
                 ws.run_forever()
+                
         def text_to_speech(self, text):
                 """
                 Converts text to speech using the Deepgram TTS API and saves the audio file.
