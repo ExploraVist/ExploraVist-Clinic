@@ -11,9 +11,21 @@ from pathlib import Path
 import threading
 import queue
 import time
+import random
 
 from libraries.metrics import timed
 import re
+import sounddevice as sd
+import numpy as np
+import websocket
+import json
+import threading
+import time
+from scipy.signal import resample
+
+from PIL import Image
+from functools import lru_cache
+
 
 def encode_image(image_path):
         with open(image_path, "rb") as image_file:
@@ -38,10 +50,14 @@ def segment_text_by_sentence(text):
 
     return segments
 
-
-DEEPGRAM_API_KEY = "3d85ba05e27a54d04228f61d2b231c97d00b926a"
-if not DEEPGRAM_API_KEY:
-    raise ValueError("Please set the DEEPGRAM_API_KEY environment variable.")
+@lru_cache(maxsize=5)
+def encode_image_cached(image_path):
+        """
+        Returns base64-encoded string of image (cached).
+        """
+        with open(image_path, "rb") as image_file:
+                return base64.b64encode(image_file.read()).decode('utf-8')
+        
 
 
 class APIHandler:
@@ -64,6 +80,60 @@ class APIHandler:
                         "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
                         "Content-Type": "text/plain"
                 })
+        
+        def stream_wav_file_to_deepgram(self, wav_path="audio/audio.wav"):
+
+                DG_URL = "wss://api.deepgram.com/v1/listen?punctuate=true"
+                header = [f"Authorization: Token {self.DEEPGRAM_API_KEY}"]
+
+                def on_open(ws):
+                        print("Streaming WAV file...")
+                        wf = wave.open(wav_path, 'rb')
+
+                        def send_chunks():
+                                try:
+                                        chunk_size = 1024
+                                        frame_rate = wf.getframerate()
+
+                                        while True:
+                                                data = wf.readframes(chunk_size)
+                                                if not data:
+                                                        break
+                                                ws.send(data, opcode=websocket.ABNF.OPCODE_BINARY)
+
+                                                if simulate_realtime:
+                                                        time.sleep(chunk_size / frame_rate)
+
+                                        print("✅ Finished streaming WAV file")
+                                        ws.close()
+
+                                except Exception as e:
+                                        print("Error sending audio:", e)
+
+                        threading.Thread(target=send_chunks, daemon=True).start()
+
+                def on_message(ws, message):
+                        try:
+                                msg = json.loads(message)
+                                transcript = msg.get("channel", {}).get("alternatives", [{}])[0].get("transcript", "")
+                                if transcript:
+                                        print("🗣️", transcript)
+                        except Exception as e:
+                                print("Error parsing transcript:", e)
+
+
+                def on_close(ws, code, reason):
+                        print("Connection closed")
+
+                websocket.enableTrace(False)
+                ws = websocket.WebSocketApp(
+                        DG_URL,
+                        header=header,
+                        on_open=on_open,
+                        on_message=on_message,
+                        on_close=on_close
+                )
+                ws.run_forever()
 
         def text_to_speech(self, text):
                 """
@@ -141,62 +211,6 @@ class APIHandler:
                 if current_chunk:
                         chunks.append(current_chunk.strip())
                 return chunks 
-         
-        def stream_tts(self, text):
-                url = "https://api.deepgram.com/v1/speak"
-                headers = {
-                        "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
-                        "Accept": "audio/mpeg"  # Deepgram will return MP3 audio
-                }
-
-                chunks = self.split_text(text)
-                Path("audio").mkdir(exist_ok=True)
-                wav_files = []
-
-                for i, chunk in enumerate(chunks):
-                        mp3_path = f"audio/chunk_{i}.mp3"
-                        wav_path = f"audio/chunk_{i}.wav"
-
-                        try:
-                                with self.session.post(url, headers=headers, data=chunk.encode("utf-8"), stream=True) as response:
-                                        response.raise_for_status()
-                                        with open(mp3_path, "wb") as f:
-                                                for audio_chunk in response.iter_content(chunk_size=4096):
-                                                        if audio_chunk:
-                                                                f.write(audio_chunk)
-
-            # Convert MP3 to WAV
-                                subprocess.run([
-                                        "ffmpeg", "-y", "-i", mp3_path, wav_path
-                                ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-                                wav_files.append(wav_path)
-                                os.remove(mp3_path)
-
-                        except requests.RequestException as e:
-                                print(f"Chunk {i} failed: {e}")
-                                continue
-
-    # Create a file list for ffmpeg concat
-                concat_list_path = "audio/concat_list.txt"
-                with open(concat_list_path, "w") as f:
-                        for wav_file in wav_files:
-                                f.write(f"file '{os.path.abspath(wav_file)}'\n")
-
-                final_wav = "audio/converted_response.wav"
-
-    # Use ffmpeg to concatenate all .wav files
-                subprocess.run([
-                        "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_list_path,
-                        "-c", "copy", final_wav
-                ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    # Cleanup
-                for wav in wav_files:
-                        os.remove(wav)
-                        os.remove(concat_list_path)
-
-                return final_wav
 
         def play_audio(self, audio_file="audio/converted_response.wav"):
                 """
@@ -245,6 +259,20 @@ class APIHandler:
                 Path("audio").mkdir(exist_ok=True)
                 q = queue.Queue()
                 self.canceled = 0
+
+                intro_choices = {
+                        1: "audio_files/thinking.wav",
+                        2: "audio_files/letssee.wav",
+                        3: "audio_files/almostthere.wav"
+                }
+
+                choice = random.choice([1, 2, 3, 4, 5, 6])
+                if choice in intro_choices:
+                        threading.Thread(
+                        target=self.play_audio,
+                        args=(intro_choices[choice],),
+                        daemon=True
+                ).start()
 
                 def producer():
                         for i, chunk in enumerate(chunks):
@@ -298,9 +326,13 @@ class APIHandler:
                 os.remove(wav_path)
 
         def _process_and_play_single_chunk(self, text):
+                if not text.strip():
+                        print("⚠️ Skipping empty TTS chunk")
+                        return
                 url = "https://api.deepgram.com/v1/speak"
                 headers = {
                         "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
+                        "Content-Type": "text/plain",
                         "Accept": "audio/mpeg"
                 }
 
@@ -395,17 +427,6 @@ class APIHandler:
                         print("GPT-4o-mini Response: ", response)
                         return response
                 return None
-        
-        def gpt_stream_request(self, transcript):
-                """
-                Performs GPT API Request with a custom prompt returning text response
-
-                Parameters:
-                        transcript (str): User prompt / transcript of user speech
-
-                Returns:
-                str: GPT text response if successful, None otherwise.
-                """
 
 
         def gpt_image_request(self, transcript, photo_path="images/temp_image.jpg"):
@@ -447,9 +468,215 @@ class APIHandler:
                 message_content = response.choices[0].message.content
                 print(f"GPT-4o-mini Response: {message_content}")
                 return(message_content)
-
+        
+        def resize_image(self, image_path, max_size=512):
+                """
+                Resizes the image to fit within max_size (pixels) and returns new path.
+                """
+                os.makedirs("images", exist_ok=True)
+                resized_path = "images/resized_temp.jpg"
+                img = Image.open(image_path)
+                img.thumbnail((max_size, max_size))
+                img.save(resized_path, "JPEG")
+                return resized_path
         
 
+        def gpt_image_request2(self, transcript, photo_path="images/temp_image.jpg"):
+                """
+                Sends an image and a text prompt to the GPT API and returns the text response.
+
+                Parameters:
+                        photo_path (str): Path to the image file to be sent.
+                        transcript (str): Text prompt or description for the image.
+
+                Returns:
+                str: The GPT model's response text.
+                """
+        # Path to # ✅ Resize image for performance
+                resized_path = self.resize_image(photo_path)
+
+    # ✅ Encode resized image using cached method
+                base64_image = encode_image_cached(resized_path)
+                messages=[
+                                {
+                                        "role": "user",
+                                        "content": [
+                                                {
+                                                        "type": "text",
+                                                        "text": transcript,
+                                                },
+                                                {
+                                                        "type": "image_url",
+                                                        "image_url": {
+                                                                "url":  f"data:image/jpeg;base64,{base64_image}"
+                                                                },
+                                                },
+                                        ],
+                                }
+                        ]
+                
+                print("Streaming GPT-4o response...")
+
+                response_text = ""
+                response = self.client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=messages,
+                        stream=True
+                )
+
+                for chunk in response:
+                        delta = chunk.choices[0].delta
+                        if hasattr(delta, "content"):
+                                content = delta.content
+                                if content:
+                                        print(content, end="", flush=True)
+                                        response_text += content
+
+                print()  # new line after stream
+                return response_text
+        
+        def gpt_image_request3(self, transcript, photo_path="images/temp_image.jpg"):
+                """
+                Sends an image and a text prompt to the GPT API and returns the text response.
+
+                Parameters:
+                        photo_path (str): Path to the image file to be sent.
+                        transcript (str): Text prompt or description for the image.
+
+                Returns:
+                str: The GPT model's response text.
+                """
+                if not hasattr(self, "audio_queue"):
+                        self.audio_queue = queue.Queue()
+
+                        def audio_worker():
+                                while True:
+                                        text = self.audio_queue.get()
+                                        if text:
+                                                self._process_and_play_single_chunk(text)
+                                        self.audio_queue.task_done()
+                
+                        threading.Thread(target=audio_worker, daemon=True).start()
+
+                resized_path = self.resize_image(photo_path)
+                base64_image = encode_image_cached(resized_path)
+
+                messages=[
+                                {
+                                        "role": "user",
+                                        "content": [
+                                                {
+                                                        "type": "text",
+                                                        "text": transcript,
+                                                },
+                                                {
+                                                        "type": "image_url",
+                                                        "image_url": {
+                                                                "url":  f"data:image/jpeg;base64,{base64_image}"
+                                                                },
+                                                },
+                                        ],
+                                }
+                        ]
+                
+                print("Streaming GPT-4o response...")
+
+                response_text = ""
+                buffer = ""
+
+                response = self.client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=messages,
+                        stream=True
+                )
+
+                for chunk in response:
+                        delta = chunk.choices[0].delta
+                        content = getattr(delta, "content", None)
+                        
+                        if content and content.strip(): 
+                                print(content, end="", flush=True)
+                                response_text += content
+                                buffer += content
+
+                                if any(p in content for p in ".!?") or len(buffer) > 199:
+                                        print(f"\n🎤 Queueing for TTS: {buffer.strip()}")
+                                        self.audio_queue.put(buffer.strip())
+                                        buffer = ""
+                if buffer.strip():
+                        print(f"\n🎤 Final speaking chunk: {buffer.strip()}")
+                        self.audio_queue.put(buffer.strip())
+
+                print()  # new line after stream
+                return response_text
+        
+        def gpt_image_request_word_by_word(self, transcript, photo_path="images/temp_image.jpg"):
+                """
+                Streams GPT-4o word-by-word and speaks each word using Deepgram TTS.
+                """
+                # Start audio queue system if not already running
+                self.audio_queue = queue.Queue()
+
+                def audio_worker():
+                        while True:
+                                word = self.audio_queue.get()
+                                if word and len(word.strip()) > 1:  # avoid 1-char like "a"
+                                        self._process_and_play_single_chunk(word)
+                                self.audio_queue.task_done()
+
+                threading.Thread(target=audio_worker, daemon=True).start()
+
+    # Prepare image and prompt
+                resized_path = self.resize_image(photo_path)
+                base64_image = encode_image_cached(resized_path)
+
+                messages = [
+                        {
+                                "role": "user",
+                                "content": [
+                                        {"type": "text", "text": transcript},
+                                        {
+                                                "type": "image_url",
+                                                "image_url": {
+                                                        "url": f"data:image/jpeg;base64,{base64_image}"
+                                                },
+                                        },
+                                ],
+                        }
+                ]
+
+                print("Streaming GPT-4o response word-by-word...")
+                response_text = ""
+
+                response = self.client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=messages,
+                        stream=True
+                )
+
+                word_buffer = ""
+                for chunk in response:
+                        delta = chunk.choices[0].delta
+                        content = getattr(delta, "content", None)
+
+                        if content and content.strip():
+                                print(content, end="", flush=True)
+                                response_text += content
+                                word_buffer += content
+
+            # Check for a space = end of word
+                                if " " in word_buffer:
+                                        words = word_buffer.strip().split()
+                                        for word in words[:-1]:
+                                                self.audio_queue.put(word.strip())
+                                        word_buffer = words[-1] if words else ""
+
+    # Final word
+                if word_buffer.strip():
+                        self.audio_queue.put(word_buffer.strip())
+
+                print()  # newline
+                return response_text
         class MemoryManager:
                 def __init__(self):
             # Current context window
