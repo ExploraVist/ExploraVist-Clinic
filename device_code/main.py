@@ -69,7 +69,6 @@ def main():
         time_pressed = time.time() - start_time
 
         if time_pressed <= 1.6 and time_pressed >= 0.1: # Image Description Using Default Prompt
-            
             # Image Response
             if button_pressed == 2:
                 # Take image
