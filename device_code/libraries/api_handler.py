@@ -129,6 +129,7 @@ class APIHandler:
                         on_message=on_message,
                         on_error=lambda ws, err: print("WebSocket error:", err),
                         on_close=lambda ws, code, msg: print("🔌 Connection closed")
+                )
                 ws.run_forever()
 
         def text_to_speech(self, text):
