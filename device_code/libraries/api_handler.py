@@ -609,9 +609,7 @@ class APIHandler:
 
     # ✅ Encode resized image using cached method
                 base64_image = encode_image_cached(resized_path)
-
-                response = self.client.chat.completions.create(
-                        messages=[
+                messages=[
                                 {
                                         "role": "user",
                                         "content": [
@@ -627,16 +625,15 @@ class APIHandler:
                                                 },
                                         ],
                                 }
-                        ],
-                )
-
+                        ]
+                
                 print("⚡ Streaming GPT-4o response...")
+
                 response_text = ""
                 response = self.client.chat.completions.create(
                         model="gpt-4o",
                         messages=messages,
-                        stream=True,
-                        max_tokens=max_tokens
+                        stream=True
                 )
 
                 for chunk in response:
