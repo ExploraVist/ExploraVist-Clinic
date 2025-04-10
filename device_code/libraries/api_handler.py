@@ -87,7 +87,7 @@ class APIHandler:
                 header = [f"Authorization: Token {self.DEEPGRAM_API_KEY}"]
 
                 def on_open(ws):
-                        print("🔁 Streaming WAV file...")
+                        print("Streaming WAV file...")
                         wf = wave.open(wav_path, 'rb')
 
                         def send_chunks():
@@ -108,7 +108,7 @@ class APIHandler:
                                         ws.close()
 
                                 except Exception as e:
-                                        print("❌ Error sending audio:", e)
+                                        print("Error sending audio:", e)
 
                         threading.Thread(target=send_chunks, daemon=True).start()
 
@@ -119,11 +119,11 @@ class APIHandler:
                                 if transcript:
                                         print("🗣️", transcript)
                         except Exception as e:
-                                print("❗ Error parsing transcript:", e)
+                                print("Error parsing transcript:", e)
 
 
                 def on_close(ws, code, reason):
-                        print("🔌 Connection closed")
+                        print("Connection closed")
 
                 websocket.enableTrace(False)
                 ws = websocket.WebSocketApp(
@@ -131,70 +131,6 @@ class APIHandler:
                         header=header,
                         on_open=on_open,
                         on_message=on_message,
-                        on_close=on_close
-                )
-                ws.run_forever()
-
-                
-        def stream_live_recording_to_deepgram(self):
-                DG_URL = "wss://api.deepgram.com/v1/listen?punctuate=true"
-                header = [f"Authorization: Token {self.DEEPGRAM_API_KEY}"]
-
-                self.RATE = getattr(self, "RATE", 16000)             # 16kHz sample rate
-                self.CHANNELS = getattr(self, "CHANNELS", 1)         # Mono
-                self.FORMAT = getattr(self, "FORMAT", "S16_LE")      # 16-bit PCM
-
-                websocket.enableTrace(True)
-                def on_open(ws):
-                        print("🎤 Starting real-time arecord stream to Deepgram...")
-
-                        def send_audio():
-                                try:
-                                        cmd = [
-                                                "arecord",
-                                                "-D", "plughw:0",
-                                                "-c", str(self.CHANNELS),
-                                                "-r", str(self.RATE),
-                                                "-f", self.FORMAT,
-                                                "-t", "raw"
-                                        ]
-                                        print(f"🎙️ arecord command: {' '.join(cmd)}")
-                                        arecord_proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-
-                                        def log_arecord_errors():
-                                                for line in iter(arecord_proc.stderr.readline, b''):
-                                                        print("🛑 arecord error:", line.decode().strip())
-                                        threading.Thread(target=log_arecord_errors, daemon=True).start()
-                                
-
-                                except Exception as e:
-                                        print("❌ Error streaming audio:", e)
-                                finally:
-                                        print("🔁 Stopping arecord stream.")
-                                        ws.close()
-                        threading.Thread(target=send_audio, daemon=True).start()
-
-                def on_message(ws, message):
-                        try:
-                                msg = json.loads(message)
-                                transcript = msg.get("channel", {}).get("alternatives", [{}])[0].get("transcript", "")
-                                if transcript:
-                                                print("🗣️", transcript)
-                        except Exception as e:
-                                print("❗ Error parsing message:", e)
-                def on_close(ws, code, reason):
-                        print("🔌 Deepgram connection closed")
-                        
-                def on_error(ws, error):
-                        print("WebSocket error:", error)
-
-                websocket.enableTrace(False)
-                ws = websocket.WebSocketApp(
-                        DG_URL,
-                        header=header,
-                        on_open=on_open,
-                        on_message=on_message,
-                        on_error=on_error,
                         on_close=on_close
                 )
                 ws.run_forever()
@@ -275,62 +211,6 @@ class APIHandler:
                 if current_chunk:
                         chunks.append(current_chunk.strip())
                 return chunks 
-         
-        def stream_tts(self, text):
-                url = "https://api.deepgram.com/v1/speak"
-                headers = {
-                        "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
-                        "Accept": "audio/mpeg"  # Deepgram will return MP3 audio
-                }
-
-                chunks = self.split_text(text)
-                Path("audio").mkdir(exist_ok=True)
-                wav_files = []
-
-                for i, chunk in enumerate(chunks):
-                        mp3_path = f"audio/chunk_{i}.mp3"
-                        wav_path = f"audio/chunk_{i}.wav"
-
-                        try:
-                                with self.session.post(url, headers=headers, data=chunk.encode("utf-8"), stream=True) as response:
-                                        response.raise_for_status()
-                                        with open(mp3_path, "wb") as f:
-                                                for audio_chunk in response.iter_content(chunk_size=4096):
-                                                        if audio_chunk:
-                                                                f.write(audio_chunk)
-
-            # Convert MP3 to WAV
-                                subprocess.run([
-                                        "ffmpeg", "-y", "-i", mp3_path, wav_path
-                                ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-                                wav_files.append(wav_path)
-                                os.remove(mp3_path)
-
-                        except requests.RequestException as e:
-                                print(f"Chunk {i} failed: {e}")
-                                continue
-
-    # Create a file list for ffmpeg concat
-                concat_list_path = "audio/concat_list.txt"
-                with open(concat_list_path, "w") as f:
-                        for wav_file in wav_files:
-                                f.write(f"file '{os.path.abspath(wav_file)}'\n")
-
-                final_wav = "audio/converted_response.wav"
-
-    # Use ffmpeg to concatenate all .wav files
-                subprocess.run([
-                        "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_list_path,
-                        "-c", "copy", final_wav
-                ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    # Cleanup
-                for wav in wav_files:
-                        os.remove(wav)
-                        os.remove(concat_list_path)
-
-                return final_wav
 
         def play_audio(self, audio_file="audio/converted_response.wav"):
                 """
@@ -547,17 +427,6 @@ class APIHandler:
                         print("GPT-4o-mini Response: ", response)
                         return response
                 return None
-        
-        def gpt_stream_request(self, transcript):
-                """
-                Performs GPT API Request with a custom prompt returning text response
-
-                Parameters:
-                        transcript (str): User prompt / transcript of user speech
-
-                Returns:
-                str: GPT text response if successful, None otherwise.
-                """
 
 
         def gpt_image_request(self, transcript, photo_path="images/temp_image.jpg"):
@@ -646,7 +515,7 @@ class APIHandler:
                                 }
                         ]
                 
-                print("⚡ Streaming GPT-4o response...")
+                print("Streaming GPT-4o response...")
 
                 response_text = ""
                 response = self.client.chat.completions.create(
@@ -710,7 +579,7 @@ class APIHandler:
                                 }
                         ]
                 
-                print("⚡ Streaming GPT-4o response...")
+                print("Streaming GPT-4o response...")
 
                 response_text = ""
                 buffer = ""
@@ -776,7 +645,7 @@ class APIHandler:
                         }
                 ]
 
-                print("⚡ Streaming GPT-4o response word-by-word...")
+                print("Streaming GPT-4o response word-by-word...")
                 response_text = ""
 
                 response = self.client.chat.completions.create(
