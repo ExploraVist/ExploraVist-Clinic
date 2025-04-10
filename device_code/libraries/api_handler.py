@@ -123,63 +123,59 @@ class APIHandler:
                 ws.run_forever()
 
                 
-        def live_transcription_from_mic(self):
+        def stream_live_recording_to_deepgram(self):
                 DG_URL = "wss://api.deepgram.com/v1/listen?punctuate=true"
                 header = [f"Authorization: Token {self.DEEPGRAM_API_KEY}"]
-                def on_error(ws, error):
-                        print("WebSocket error:", error)
-
-                def on_close(ws, code, reason):
-                        print("🔌 Connection closed")
 
                 def on_open(ws):
-                        print("🎤 Connected to Deepgram")
-                        def record_and_send():
+                        print("🎤 Starting real-time arecord stream to Deepgram...")
+
+                        def send_audio():
                                 try:
-                                        # Auto-detect sample rate
-                                        device_info = sd.query_devices(kind='input')
-                                        input_rate = int(device_info['default_samplerate'])
-                                        print(f"Using input sample rate: {input_rate} Hz")
+                                        cmd = [
+                                                "arecord",
+                                                "-D", "plughw:0",
+                                                "-c", str(self.CHANNELS),
+                                                "-r", str(self.RATE),
+                                                "-f", self.FORMAT,
+                                                "-t", "raw"
+                                        ]
+                                        arecord_proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 
-                                        # Start audio input stream
-                                        with sd.InputStream(samplerate=input_rate, channels=1, dtype='int16') as stream:
-                                                while True:
-                                                        data, _ = stream.read(1024)
-
-                                                # If there's no input (mic unplugged), skip
-                                                        if data is None or len(data) == 0:
-                                                                print("⚠️ No mic data")
-                                                                continue
-
-                                                        print("📦 Sending audio chunk")
-
-                                                # Resample to 16000 Hz for Deepgram
-                                                        resampled = resample(data, int(len(data) * 16000 / input_rate)).astype('int16')
-                                                        ws.send(resampled.tobytes(), opcode=websocket.ABNF.OPCODE_BINARY)
-
+                                        while True:
+                                                data = arecord_proc.stdout.read(1024)
+                                                if not data:
+                                                        break
+                                                ws.send(data, opcode=websocket.ABNF.OPCODE_BINARY)
                                 except Exception as e:
-                                        print("🎙️ Mic error:", e)
+                                        print("❌ Error streaming audio:", e)
+                                finally:
+                                        print("🔁 Stopping arecord stream.")
+                                        ws.close()
+                        def on_message(ws, message):
+                                try:
+                                        msg = json.loads(message)
+                                        transcript = msg.get("channel", {}).get("alternatives", [{}])[0].get("transcript", "")
+                                        if transcript:
+                                                print("🗣️", transcript)
+                                except Exception as e:
+                                        print("❗ Error parsing message:", e)
+                        def on_close(ws, code, reason):
+                                print("🔌 Deepgram connection closed")
+                        
+                        def on_error(ws, error):
+                                 print("WebSocket error:", error)
 
-                        threading.Thread(target=record_and_send, daemon=True).start()
-                def on_message(ws, message):
-                        try:
-                                msg = json.loads(message)
-                                transcript = msg.get("channel", {}).get("alternatives", [{}])[0].get("transcript", "")
-                                if transcript:
-                                        print("🗣️", transcript)
-                        except Exception as e:
-                                print("❗ Error parsing message:", e)
-
-                ws = websocket.WebSocketApp(
-                        DG_URL,
-                        header = header,
-                        on_open=on_open,
-                        on_message=on_message,
-                        on_error=on_error,
-                        on_close=on_close
-                )
-                ws.run_forever()
-
+                        websocket.enableTrace(False)
+                        ws = websocket.WebSocketApp(
+                                DG_URL,
+                                header=header,
+                                on_open=on_open,
+                                on_message=on_message,
+                                on_error=on_error,
+                                on_close=on_close
+                        )
+                        ws.run_forever()
         def text_to_speech(self, text):
                 """
                 Converts text to speech using the Deepgram TTS API and saves the audio file.
