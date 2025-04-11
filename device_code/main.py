@@ -2,8 +2,8 @@ from libraries.media_device_manager import MediaDeviceManager
 from libraries.api_handler import APIHandler
 from libraries.sys_config import SystemConfig
 import RPi.GPIO as GPIO  # Import Raspberry Pi GPIO library
-from libraries.config import config
 import libraries.config
+from libraries.config import config
 import time
 import threading
 import pyttsx3
@@ -120,7 +120,7 @@ def main():
 
 
                 # Play Starting Sound
-
+                api_handler.play_audio("audio_files/start_sound.wav")
 
                 # Make LLM API Call with Custom Prompt
                 begin = time.time()

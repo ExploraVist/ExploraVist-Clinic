@@ -15,7 +15,6 @@ from libraries.metrics import timed
 import re
 import sounddevice as sd
 import numpy as np
-import websocket
 import json
 import threading
 import time
