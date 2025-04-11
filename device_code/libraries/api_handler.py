@@ -19,10 +19,14 @@ import json
 import threading
 import time
 from scipy.signal import resample
+import websockets
+
 
 from PIL import Image
 from functools import lru_cache
 
+url_listen = "https://api.deepgram.com/v1/listen"
+url_speak = "https://api.deepgram.com/v1/speak"
 
 def encode_image(image_path):
         with open(image_path, "rb") as image_file:
@@ -144,11 +148,11 @@ class APIHandler:
                 """
                 temp_time = time.time()
                 start_time = time.time()
-                url = "https://api.deepgram.com/v1/speak"
+                
 
                 try:
                         # Send the request to Deepgram's TTS API
-                        response = self.session.post(url, data=text.encode('utf-8'))
+                        response = self.session.post(url_speak, data=text.encode('utf-8'))
                         response.raise_for_status()
 
                         # print(f"API Request Time: {time.time() - temp_time:.2f} seconds")
@@ -244,7 +248,7 @@ class APIHandler:
                     os.remove(audio_file)
         
         def stream_tts_and_play(self, text):
-                url = "https://api.deepgram.com/v1/speak"
+                
                 headers = {
                 "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
                 "Accept": "audio/mpeg"
@@ -278,7 +282,7 @@ class APIHandler:
                                         break
                                 wav_path = f"audio/chunk_{i}.wav"
                                 try:
-                                        with self.session.post(url, headers=headers, data=chunk.encode("utf-8"), stream=True) as response:
+                                        with self.session.post(url_speak, headers=headers, data=chunk.encode("utf-8"), stream=True) as response:
                                                 response.raise_for_status()
                                                 ffmpeg_process = subprocess.Popen([
                                                         "ffmpeg", "-y", "-threads", "1",
@@ -327,7 +331,7 @@ class APIHandler:
                 if not text.strip():
                         print("⚠️ Skipping empty TTS chunk")
                         return
-                url = "https://api.deepgram.com/v1/speak"
+                
                 headers = {
                         "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
                         "Content-Type": "text/plain",
@@ -336,7 +340,7 @@ class APIHandler:
 
                 wav_path = "audio/quick_response.wav"
                 try:
-                        with self.session.post(url, headers=headers, data=text.encode("utf-8"), stream=True) as response:
+                        with self.session.post(url_speak, headers=headers, data=text.encode("utf-8"), stream=True) as response:
                                 response.raise_for_status()
 
                                 ffmpeg_process = subprocess.Popen([
@@ -370,13 +374,13 @@ class APIHandler:
                         str: The transcribed text if successful, None otherwise.
                 """
 
-                url = "https://api.deepgram.com/v1/listen"
+                
                 print(self.DEEPGRAM_API_KEY)
         # Open the audio file in binary mode
                 with open(file_path, "rb") as audio_file:
             # Send the file for transcription
                         response = requests.post(
-                                url,
+                                url_listen,
                                 headers={
                                 "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
                                 "Content-Type": "audio/wav"  # Use "audio/mp3" for MP3 files
