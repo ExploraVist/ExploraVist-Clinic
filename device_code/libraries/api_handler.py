@@ -485,6 +485,7 @@ class APIHandler:
                 """
         # Path to # ✅ Resize image for performance
                 resized_path = self.resize_image(photo_path)
+                
 
     # ✅ Encode resized image using cached method
                 base64_image = encode_image(resized_path)
