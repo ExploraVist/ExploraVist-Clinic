@@ -156,7 +156,7 @@ def main():
                 temp_prompt = context_window + f"Current Question: {transcript} \n"
 
                 # Make LLM API Call with Custom Prompt
-                text_response = api_handler.gpt_request2(temp_prompt)
+                text_response = api_handler.gpt_image_request2(temp_prompt)
                 context_window += f"USER: {transcript} \n GPT: {text_response} \n"
 
                 # Check that pin is low
