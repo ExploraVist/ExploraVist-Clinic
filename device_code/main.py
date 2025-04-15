@@ -7,6 +7,20 @@ from libraries.config import config
 import time
 import threading
 import pyttsx3
+import os
+
+log_path = os.path.join(os.path.dirname(__file__), "battery_lifetime_log.txt")
+
+
+def log_battery_status():
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    message = f"{timestamp}, device still alive"
+    with open(log_path, "a") as f:
+        f.write(message + "\n")
+        f.flush()
+        os.fsync(f.fileno())
+    print(message)  
+
 
 def check_gpio_state(expected_state, AMP_SD):
     """Checks if GPIO state matches the expected state."""
@@ -71,47 +85,50 @@ def main():
         if time_pressed <= 1.6 and time_pressed >= 0.1: # Image Description Using Default Prompt
             # Image Response
             if button_pressed == 2:
-                while(button_pressed == 0):
-                    # Take image
-                    device.capture_image()
-                    temp_prompt = context_window + f"Current Question: {default_prompt} \n"
+                while(0):
+                        log_battery_status();
+                        # Take image
+                        
+                        temp_prompt = context_window + f"Current Question: {default_prompt} \n"
 
-                    # Play Starting Sound
-                    api_handler.play_audio("audio_files/start_sound.wav")
+                        # Play Starting Sound
+                        api_handler.play_audio("audio_files/start_sound.wav")
 
-                    # Make LLM API Call
-                    begin = time.time()
-                    text_response = api_handler.gpt_image_request2(temp_prompt)
-                    context_window += f"USER: {default_prompt} \n GPT: {text_response} \n"
+                        # Make LLM API Call
+                        begin = time.time()
+                        text_response = api_handler.gpt_image_request2(temp_prompt)
+                        context_window += f"USER: {default_prompt} \n GPT: {text_response} \n"
 
-                    # Check that pin is low
-                    check_gpio_state(GPIO.LOW,AMP_SD_PIN)
+                        # Check that pin is low
+                        check_gpio_state(GPIO.LOW,AMP_SD_PIN)
 
-                    # Turn On Speaker
-                    GPIO.output(AMP_SD_PIN, GPIO.HIGH)
+                        # Turn On Speaker
+                        GPIO.output(AMP_SD_PIN, GPIO.HIGH)
 
-                    # Check that pin is low
-                    check_gpio_state(GPIO.HIGH,AMP_SD_PIN)
-                    time.sleep(0.1) 
+                        # Check that pin is low
+                        check_gpio_state(GPIO.HIGH,AMP_SD_PIN)
+                        time.sleep(0.1) 
 
-                    # Convert LLM Response to Audio
+                        # Convert LLM Response to Audio
 
-                    end = time.time()
-                
-
-                    #api_handler.stream_tts(text_response)
-                    api_handler.stream_tts_and_play(text_response)
-                    print ("text to speech")
-                    print (end, begin, end-begin)
+                        end = time.time()
                     
-                    #api_handler.play_audio()
+
+                        #api_handler.stream_tts(text_response)
+                        api_handler.stream_tts_and_play(text_response)
+                        print ("text to speech")
+                        print (end, begin, end-begin)
+                        
+                        #api_handler.play_audio()
 
                 
 
 
         elif time_pressed > 1.5:
             if button_pressed == 2:   # Image with Custom Prompt
-                while(button_pressed == 0):
+                while(0):
+                    # Test Battery Length
+                    log_battery_status();
                     # Take image
                     device.capture_image()
                     api_handler.play_audio("audio_files/start_sound.wav")
