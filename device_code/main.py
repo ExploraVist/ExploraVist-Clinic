@@ -85,7 +85,7 @@ def main():
         if time_pressed <= 1.6 and time_pressed >= 0.1: # Image Description Using Default Prompt
             # Image Response
             if button_pressed == 2:
-                while(0):
+                while(1):
                         log_battery_status();
                         # Take image
                         
@@ -126,7 +126,7 @@ def main():
 
         elif time_pressed > 1.5:
             if button_pressed == 2:   # Image with Custom Prompt
-                while(0):
+                while(1):
                     # Test Battery Length
                     log_battery_status();
                     # Take image
