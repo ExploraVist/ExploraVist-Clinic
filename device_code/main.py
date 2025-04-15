@@ -20,6 +20,7 @@ def log_battery_status():
         f.flush()
         os.fsync(f.fileno())
     print(message)  
+    time.sleep(10)
 
 
 def check_gpio_state(expected_state, AMP_SD):
