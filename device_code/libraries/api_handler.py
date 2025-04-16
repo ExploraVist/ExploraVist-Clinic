@@ -215,27 +215,41 @@ class APIHandler:
                         return
 
                 print("Audio data received successfully. Playing audio...")
-                # temp_time = time.time()
+
+                try:
+                        audio_process = subprocess.Popen(["aplay", audio_file])
+
+                        # Monitor GPIO 22 and 27 to cancel playback
+                        while audio_process.poll() is None:
+                                if GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:
+                                        print("Button pressed, stopping audio playback.")
+                                        audio_process.terminate()
+                                        self.canceled = 1
+                                        try:
+                                                audio_process.wait(timeout=1)
+                                        except subprocess.TimeoutExpired:
+                                                print("Process did not terminate, killing it.")
+                                                audio_process.kill()
+                                                audio_process.wait()
+                                        break
+                                time.sleep(0.1)
+
+                        else:
+                                # If loop exited normally (i.e. audio finished), wait for cleanup
+                                audio_process.wait()
+
+                except Exception as e:
+                        print(f"Playback error: {e}")
+
+                # Delete file if it's a temporary response
+                if "converted_response.wav" in audio_file and os.path.exists(audio_file):
+                        try:
+                                os.remove(audio_file)
+                        except Exception as e:
+                                print(f"Could not delete file: {e}")
+
+
                 
-                audio_process = subprocess.Popen(["aplay", audio_file])
-
-                # Monitor GPIO 22 to cancel playback
-                while audio_process.poll() is None:
-                        if GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:  # Button is pressed
-                                print("Button pressed, stopping audio playback.")
-                                audio_process.terminate()
-                                self.canceled = 1
-                                break
-                        time.sleep(0.1)  # Check every 100ms
-                audio_process.wait()
-
-                # print(f"Playback Time: {time.time() - temp_time:.2f} seconds")
-                # print("Playback finished.")
-
-                # Only delete the file if it's a temporary response file
-                if "converted_response.wav" in audio_file:
-                    os.remove(audio_file)
-        
         def stream_tts_and_play(self, text):
                 url = "https://api.deepgram.com/v1/speak"
                 headers = {

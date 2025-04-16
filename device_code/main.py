@@ -44,6 +44,8 @@ def main():
     device = MediaDeviceManager()
     api_handler = APIHandler(config=config) 
 
+    api_handler.play_audio("audio_files/startup.wav")
+
     restart = 0 #TODO implement an exit/restart mechanism
     default_prompt = "Describe what you see in front of you"
     context_window = "Context: \n"
