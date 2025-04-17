@@ -26,6 +26,7 @@ from scipy.signal import resample
 from PIL import Image
 from functools import lru_cache
 
+MODEL_CHOICE = "gpt-4.1-nano"
 
 def encode_image(image_path):
         with open(image_path, "rb") as image_file:
@@ -281,7 +282,7 @@ class APIHandler:
                 "Accept": "audio/mpeg"
                 }
 
-                if len(text) <= 200:  # or adjust threshold based on performance        
+                if len(text) <= 20:  # or adjust threshold based on performance        
                         self._process_and_play_single_chunk(text)
                         return
                 chunks = self.split_text(text)
@@ -445,7 +446,7 @@ class APIHandler:
                 if transcript:
             # Send the transcript to OpenAI GPT model
                         completion = self.client.chat.completions.create(
-                                model="gpt-4o",
+                                model=MODEL_CHOICE,
                                 messages=[
                                         {"role": "user", "content": transcript}
                                 ]
@@ -474,7 +475,7 @@ class APIHandler:
                 base64_image = encode_image(photo_path)
 
                 response = self.client.chat.completions.create(
-                        model="gpt-4o",
+                        model=MODEL_CHOICE,
                         messages=[
                                 {
                                         "role": "user",
@@ -549,7 +550,7 @@ class APIHandler:
 
                 response_text = ""
                 response = self.client.chat.completions.create(
-                        model="gpt-4o",
+                        model=MODEL_CHOICE,
                         messages=messages,
                         stream=True
                 )
@@ -615,7 +616,7 @@ class APIHandler:
                 buffer = ""
 
                 response = self.client.chat.completions.create(
-                        model="gpt-4o",
+                        model=MODEL_CHOICE,
                         messages=messages,
                         stream=True
                 )
@@ -679,7 +680,7 @@ class APIHandler:
                 response_text = ""
 
                 response = self.client.chat.completions.create(
-                        model="gpt-4o",
+                        model=MODEL_CHOICE,
                         messages=messages,
                         stream=True
                 )
