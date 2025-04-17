@@ -5,7 +5,6 @@ import RPi.GPIO as GPIO  # Import Raspberry Pi GPIO library
 from libraries.config import config
 import libraries.config
 import time
-import threading
 import pyttsx3
 
 def check_gpio_state(expected_state, AMP_SD):
@@ -14,182 +13,148 @@ def check_gpio_state(expected_state, AMP_SD):
     if actual_state == expected_state:
         print(f"✅ GPIO {AMP_SD} is {'HIGH (ON)' if actual_state else 'LOW (OFF)'} as expected.")
     else:
-        print(f"❌ ERROR: GPIO {AMP_SD} is {'HIGH (ON)' if actual_state else 'LOW (OFF)'} but expected {'HIGH (ON)' if expected_state else 'LOW (OFF)'}!")
-
+        print(
+            f"❌ ERROR: GPIO {AMP_SD} is {'HIGH (ON)' if actual_state else 'LOW (OFF)'} "
+            f"but expected {'HIGH (ON)' if expected_state else 'LOW (OFF)'}!"
+        )
 
 def main():
-    # Initialize GPIO first
-    GPIO.setwarnings(False) # Ignore warning for now
-    GPIO.setmode(GPIO.BCM)  # Use physical pin numbering
+    # Initialize GPIO
+    GPIO.setwarnings(False)
+    GPIO.setmode(GPIO.BCM)
 
-    # Set pin 22 to pull up (normally closed)
-    GPIO.setup(22, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    # Set pin 27 to pul up (normally closed)
-    GPIO.setup(27, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    # Input buttons (pulled up)
+    GPIO.setup(22, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # Image button
+    GPIO.setup(27, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # Mic button
 
-    # Shutdown Pin on Amplifier
+    # Amplifier shutdown control
     AMP_SD_PIN = 26
     GPIO.setup(AMP_SD_PIN, GPIO.OUT)
     GPIO.output(AMP_SD_PIN, GPIO.LOW)
+    check_gpio_state(GPIO.LOW, AMP_SD_PIN)
 
-    check_gpio_state(GPIO.LOW, AMP_SD_PIN)  # Verify if the pin is LOW
-
-    # Initialize classes
+    # System readiness
     sys_config = SystemConfig()
     if not sys_config.check_system_ready():
         print("System not ready. Exiting.")
-        GPIO.cleanup()  # Clean up GPIO before exiting
+        GPIO.cleanup()
         return
-    print(config)
-    device = MediaDeviceManager()
-    api_handler = APIHandler(config=config) 
 
+    device = MediaDeviceManager()
+    api_handler = APIHandler(config=config)
+
+    # Startup sound
     api_handler.play_audio("audio_files/startup.wav")
 
-    restart = 0 #TODO implement an exit/restart mechanism
+    restart = False
     default_prompt = "Describe what you see in front of you"
-    context_window = "Context: \n"
+    context_window = "Context:\n"
 
-    while(not restart):
-        # In case of an interrupt, give some room so you don't immediately take another picture
-        if api_handler.canceled == 1:
+    # Timing thresholds
+    THRESHOLD = 1.5    # seconds to distinguish tap vs. hold
+    MIN_PRESS  = 0.01  # ignore very quick blips
+
+    while not restart:
+        # Debounce if last TTS was canceled
+        if api_handler.canceled:
             time.sleep(1)
         api_handler.canceled = 0
-        button_pressed = 0
 
-        start_time = time.time()
-        while GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:
-            #api_handler.live_transcription_from_mic()
-            #api_handler.stream_live_recording_to_deepgram()
-            device.start_recording()
+        # Wait for button press
+        button_pressed = None
+        start_time = None
+
+        while True:
             if GPIO.input(22) == GPIO.LOW:
                 button_pressed = 2
-            elif GPIO.input(27) == GPIO.LOW:
+                start_time = time.time()
+                device.start_recording()
+                break
+            if GPIO.input(27) == GPIO.LOW:
                 button_pressed = 1
+                start_time = time.time()
+                device.start_recording()
+                break
+            time.sleep(0.01)
 
+        # Wait for release
+        while GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:
+            time.sleep(0.01)
         device.stop_recording()
+
         time_pressed = time.time() - start_time
 
-        if time_pressed <= 1.6 and time_pressed >= 0.1: # Image Description Using Default Prompt
-            
-            # Image Response
-            if button_pressed == 2:
-                # Take image
-                device.capture_image()
-                temp_prompt = context_window + f"Current Question: {default_prompt} \n"
-
-                # Play Starting Sound
-                api_handler.play_audio("audio_files/start_sound.wav")
-
-                # Make LLM API Call
-                begin = time.time()
-                text_response = api_handler.gpt_image_request2(temp_prompt)
-                context_window += f"USER: {default_prompt} \n GPT: {text_response} \n"
-
-                # Check that pin is low
-                check_gpio_state(GPIO.LOW,AMP_SD_PIN)
-
-                # Turn On Speaker
-                GPIO.output(AMP_SD_PIN, GPIO.HIGH)
-
-                # Check that pin is low
-                check_gpio_state(GPIO.HIGH,AMP_SD_PIN)
-                time.sleep(0.1) 
-
-                # Convert LLM Response to Audio
-
-                end = time.time()
-            
-
-                #api_handler.stream_tts(text_response)
-                api_handler.stream_tts_and_play(text_response)
-                print ("text to speech")
-                print (end, begin, end-begin)
-                
-                #api_handler.play_audio()
-
-                
-
-
-        elif time_pressed > 1.5:
-            if button_pressed == 2:   # Image with Custom Prompt
-                # Take image
-                device.capture_image()
-                api_handler.play_audio("audio_files/start_sound.wav")
-                # Speech to Text
-                #transcript = api_handler.stream_wav_file_to_deepgram("audio/audio.wav")
-                transcript =  api_handler.audio_to_text("audio/audio.wav")
-                temp_prompt = context_window + f"Current Question: {transcript} \n"
-
-
-                # Play Starting Sound
-
-
-                # Make LLM API Call with Custom Prompt
-                begin = time.time()
-                text_response = api_handler.gpt_image_request2(temp_prompt)
-                context_window += f"USER: {transcript} \n GPT: {text_response} \n"
-
-                # Check that pin is low
-                check_gpio_state(GPIO.LOW,AMP_SD_PIN)
-
-                # Turn On Speaker
-                GPIO.output(AMP_SD_PIN, GPIO.HIGH)
-                
-
-                # Check that pin is low
-                check_gpio_state(GPIO.HIGH,AMP_SD_PIN)
-                time.sleep(2) 
-
-                # Convert LLM Response to Audio
-                end = time.time()
-                #api_handler.stream_tts(text_response)
-
-                api_handler.stream_tts_and_play(text_response)
-                print ("text to speech")
-                print (end, begin, end-begin)
-                
-                #api_handler.play_audio()
-
-
-            elif button_pressed == 1: # Custom Prompt Only
-                # Speech to Text
-                transcript = api_handler.audio_to_text()
-                temp_prompt = context_window + f"Current Question: {transcript} \n"
-
-                # Make LLM API Call with Custom Prompt
-                text_response = api_handler.gpt_image_request2(temp_prompt)
-                context_window += f"USER: {transcript} \n GPT: {text_response} \n"
-
-                # Check that pin is low
-                check_gpio_state(GPIO.LOW,AMP_SD_PIN)
-
-                # Turn On Speaker
-                GPIO.output(AMP_SD_PIN, GPIO.HIGH)
-
-                # Check that pin is low
-                check_gpio_state(GPIO.HIGH,AMP_SD_PIN)
-                time.sleep(0.1) 
-
-                # Convert LLM Response to Audio
-
-                begin = time.time()
-                api_handler.stream_tts_and_play(text_response)
-                end = time.time()
-                print (end-begin)
-
-                
-            else:
-                continue
-        else:  # Time pressed is too small (less than 0.1 seconds)
-            if button_pressed == 1:  # Only play for audio-only button
-                api_handler.play_audio("audio_files/hold_button.wav")
+        # Ignore very short presses
+        if time_pressed < MIN_PRESS:
             continue
-            
 
-    # Clean up resources
+        # SHORT TAP (<= THRESHOLD)
+        if time_pressed <= THRESHOLD:
+            if button_pressed == 2:
+                # Image with default prompt
+                device.capture_image()
+                api_handler.play_audio("audio_files/start_sound.wav")
+
+                prompt = context_window + f"Current Question: {default_prompt}\n"
+                begin = time.time()
+                text_response = api_handler.gpt_image_request2(prompt)
+                end = time.time()
+
+                context_window += f"USER: {default_prompt}\nGPT: {text_response}\n"
+
+                check_gpio_state(GPIO.LOW, AMP_SD_PIN)
+                GPIO.output(AMP_SD_PIN, GPIO.HIGH)
+                check_gpio_state(GPIO.HIGH, AMP_SD_PIN)
+
+                api_handler.stream_tts_and_play(text_response)
+                print(f"⏱ LLM call took {end - begin:.2f}s")
+
+            elif button_pressed == 1:
+                # Mic button tapped too quickly
+                api_handler.play_audio("audio_files/hold_button.wav")
+
+        # LONG HOLD (> THRESHOLD)
+        else:
+            if button_pressed == 2:
+                # Image + custom speech prompt
+                device.capture_image()
+                api_handler.play_audio("audio_files/start_sound.wav")
+
+                transcript = api_handler.audio_to_text("audio/audio.wav")
+                prompt = context_window + f"Current Question: {transcript}\n"
+                begin = time.time()
+                text_response = api_handler.gpt_image_request2(prompt)
+                end = time.time()
+
+                context_window += f"USER: {transcript}\nGPT: {text_response}\n"
+
+                check_gpio_state(GPIO.LOW, AMP_SD_PIN)
+                GPIO.output(AMP_SD_PIN, GPIO.HIGH)
+                check_gpio_state(GPIO.HIGH, AMP_SD_PIN)
+
+                api_handler.stream_tts_and_play(text_response)
+                print(f"⏱ LLM call took {end - begin:.2f}s")
+
+            elif button_pressed == 1:
+                # Mic-only Q&A
+                transcript = api_handler.audio_to_text("audio/audio.wav")
+                prompt = context_window + f"Current Question: {transcript}\n"
+                begin = time.time()
+                text_response = api_handler.gpt_image_request2(prompt)
+                end = time.time()
+
+                context_window += f"USER: {transcript}\nGPT: {text_response}\n"
+
+                check_gpio_state(GPIO.LOW, AMP_SD_PIN)
+                GPIO.output(AMP_SD_PIN, GPIO.HIGH)
+                check_gpio_state(GPIO.HIGH, AMP_SD_PIN)
+
+                api_handler.stream_tts_and_play(text_response)
+                print(f"⏱ LLM call took {end - begin:.2f}s")
+
+    # Cleanup
     device.close()
-    GPIO.cleanup()  # Clean up GPIO before exiting
+    GPIO.cleanup()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
