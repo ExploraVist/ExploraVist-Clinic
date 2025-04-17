@@ -93,7 +93,7 @@ def main():
             if button_pressed == 2:
                 # Image with default prompt
                 test_time = time.time()
-                api_handler.play_audio("audio_files/taking_picture.wav")
+                api_handler.play_audio_nonblocking("audio_files/taking_picture.wav")
                 print(f"Time taken to play audio: {time.time() - test_time:.2f}s") # This is for testing purposes
                 device.capture_image()
                 

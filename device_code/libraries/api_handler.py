@@ -202,6 +202,30 @@ class APIHandler:
                 if current_chunk:
                         chunks.append(current_chunk.strip())
                 return chunks 
+        
+
+        def play_audio_nonblocking(self, audio_file):
+                """Starts playback in a background thread and immediately returns."""
+                def _play_and_monitor():
+                        try:
+                                proc = subprocess.Popen(["aplay", audio_file])
+                                while proc.poll() is None:
+                                        # optional: monitor GPIO here, then proc.terminate()
+                                        if GPIO.input(22) == GPIO.LOW or GPIO.input(27) == GPIO.LOW:
+                                                print("Button pressed, stopping audio playback.")
+                                                proc.terminate()
+                                                proc.wait()
+                                                break
+                                        time.sleep(0.1)
+                                proc.wait()
+                        except Exception as e:
+                                print(f"Playback error: {e}")
+                                # cleanup temp file if desired…
+
+                t = threading.Thread(target=_play_and_monitor, daemon=True)
+                t.start()
+                # Now play_audio_nonblocking returns instantly
+
 
         def play_audio(self, audio_file="audio/converted_response.wav"):
                 """
