@@ -14,7 +14,7 @@ class ButtonWatcher(threading.Thread):
         GPIO.setwarnings(False); GPIO.setmode(GPIO.BCM)
         for p in pins:
             GPIO.setup(p, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-            GPIO.add_event_detect(p, GPIO.FALLING, self._callback, bouncetime=120)
+            GPIO.add_event_detect(p, GPIO.RISING, self._callback, bouncetime=120)
 
     def _callback(self, channel):
         subprocess.Popen(["aplay", "-q", POP_CLICK_WAV])
