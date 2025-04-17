@@ -5,10 +5,9 @@ import threading
 class CancelFlag:
     def __init__(self):
         self._event = threading.Event()
-        # When True, long‑running tasks should exit ASAP.
+        # When True, long‑running tasks (GPT/TTS) should exit ASAP.
         self.monitoring_enabled = False
 
-    # ---- public API -------------------------------------------------------
     def set(self):
         if self.monitoring_enabled:
             self._event.set()
