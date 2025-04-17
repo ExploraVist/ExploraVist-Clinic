@@ -2,7 +2,7 @@
 """APIHandler subclass that honours the CancelFlag and stops playback /
 streaming instantly when cancellation is requested."""
 import os, time, threading, subprocess
-from cancel_flag import CancelFlag
+from libraries.cancel_flag import CancelFlag
 from libraries.api_handler import APIHandler as BaseHandler
 
 class APIHandler(BaseHandler):
