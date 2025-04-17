@@ -391,9 +391,9 @@ class APIHandler:
                                                 resp.raise_for_status()
                                                 with open(wav_path, "wb") as f:
                                                         for audio_block in resp.iter_content(chunk_size=4096):
-                                                        if self.canceled:
-                                                                break
-                                                        f.write(audio_block)
+                                                                if self.canceled:
+                                                                        break
+                                                                f.write(audio_block)
                                         q.put(wav_path)
                                 except requests.RequestException as e:
                                         print(f"Chunk {i} failed: {e}")
