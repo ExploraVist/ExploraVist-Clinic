@@ -282,7 +282,7 @@ class APIHandler:
                 "Accept": "audio/mpeg"
                 }
 
-                if len(text) <= 20:  # or adjust threshold based on performance        
+                if len(text) <= 10:  # or adjust threshold based on performance        
                         self._process_and_play_single_chunk(text)
                         return
                 chunks = self.split_text(text)
