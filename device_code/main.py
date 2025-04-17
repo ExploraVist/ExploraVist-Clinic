@@ -63,7 +63,7 @@ def main():
                 flag.monitoring_enabled=False; GPIO.output(AMP_SD_PIN, GPIO.LOW); state=State.IDLE
             elif btn==1 and short:
                 flag.monitoring_enabled=True; state=State.WAIT_TTS
-                api.play_audio_nonblocking("audio_files/hold_button.wav")
+                api.play_audio("audio_files/hold_button.wav")
                 flag.monitoring_enabled=False; GPIO.output(AMP_SD_PIN, GPIO.LOW); state=State.IDLE
                 
             else:
