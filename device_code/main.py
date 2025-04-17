@@ -92,8 +92,11 @@ def main():
         if time_pressed <= THRESHOLD:
             if button_pressed == 2:
                 # Image with default prompt
+                test_time = time.time()
+                api_handler.play_audio("audio_files/taking_picture.wav")
+                print(f"Time taken to play audio: {time.time() - test_time:.2f}s") # This is for testing purposes
                 device.capture_image()
-                api_handler.play_audio("audio_files/start_sound.wav")
+                
 
                 prompt = context_window + f"Current Question: {default_prompt}\n"
                 begin = time.time()
