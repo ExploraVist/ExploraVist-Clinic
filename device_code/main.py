@@ -181,7 +181,10 @@ def main():
                 
             else:
                 continue
-                #print("waiting for input")
+        else:  # Time pressed is too small (less than 0.1 seconds)
+            if button_pressed == 1:  # Only play for audio-only button
+                api_handler.play_audio("audio_files/hold_button.wav")
+            continue
             
 
     # Clean up resources
