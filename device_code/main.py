@@ -71,7 +71,7 @@ def main():
         if btn==2: device.capture_image()
         prompt=context+f"Current Question: {transcript}\n"
         flag.monitoring_enabled=True; state=State.WAIT_GPT
-        ans=api.gpt_image_request2(prompt) if btn==2 else api.gpt_request(prompt); flag.monitoring_enabled=False
+        ans=api.gpt_image_request(prompt) if btn==2 else api.gpt_request(prompt); flag.monitoring_enabled=False
         if flag.is_set(): state=State.IDLE; continue
         context+=f"USER: {transcript}\nGPT: {ans}\n"; GPIO.output(AMP_SD_PIN,GPIO.HIGH)
         flag.monitoring_enabled=True; state=State.WAIT_TTS; api.stream_tts_and_play(ans); flag.monitoring_enabled=False
