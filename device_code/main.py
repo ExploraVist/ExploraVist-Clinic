@@ -30,7 +30,7 @@ def main():
     state, context = State.IDLE, "Context:\n"; default_prompt = "Describe what you see in front of you"
 
     def cancel_feedback():
-        api.play_audio_nonblocking("audio_files/popClick.wav")
+        api.play_audio_nonblocking("audio_files/cancelled.wav")
         GPIO.output(AMP_SD_PIN, GPIO.LOW)
         flag.clear()
 
@@ -62,7 +62,10 @@ def main():
                 api.stream_tts_and_play(answer)
                 flag.monitoring_enabled=False; GPIO.output(AMP_SD_PIN, GPIO.LOW); state=State.IDLE
             elif btn==1 and short:
+                flag.monitoring_enabled=True; state=State.WAIT_TTS
                 api.play_audio_nonblocking("audio_files/hold_button.wav")
+                flag.monitoring_enabled=False; GPIO.output(AMP_SD_PIN, GPIO.LOW); state=State.IDLE
+                
             else:
                 device.start_recording();
                 while GPIO.input(22)==GPIO.LOW or GPIO.input(27)==GPIO.LOW: time.sleep(0.05)
