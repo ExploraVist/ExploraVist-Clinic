@@ -1,3 +1,23 @@
+# ---------------------------------------------------------------------------
+# main.py
+"""Main entry: button logic, GPT/TTS pipeline, instant cancel."""
+import time, RPi.GPIO as GPIO
+from libraries.cancel_flag import CancelFlag
+from libraries.button_watcher import ButtonWatcher
+from libraries.api_handler_ext import APIHandler
+from libraries.media_device_manager import MediaDeviceManager
+from libraries.sys_config import SystemConfig
+from libraries.config import config as _cfg
+
+AMP_SD_PIN = 26; THRESHOLD=1.5; MIN_PRESS=0.01
+class State: IDLE=0; WAIT_GPT=1; WAIT_TTS=2
+
+def _gpio_setup():
+    GPIO.setwarnings(False); GPIO.setmode(GPIO.BCM)
+    GPIO.setup(22, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(27, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(AMP_SD_PIN, GPIO.OUT); GPIO.output(AMP_SD_PIN, GPIO.LOW)
+
 def main():
     flag = CancelFlag(); _gpio_setup(); ButtonWatcher(flag).start()
     if not SystemConfig().check_system_ready(): return
