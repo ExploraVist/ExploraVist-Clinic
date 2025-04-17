@@ -275,14 +275,14 @@ class APIHandler:
 
 
                 
-        def stream_tts_and_play(self, text):
+        def stream_tts_and_play_old(self, text):
                 url = "https://api.deepgram.com/v1/speak"
                 headers = {
                 "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
                 "Accept": "audio/mpeg"
                 }
 
-                if len(text) <= 10:  # or adjust threshold based on performance        
+                if len(text) <= 50:  # or adjust threshold based on performance        
                         self._process_and_play_single_chunk(text)
                         return
                 chunks = self.split_text(text)
@@ -341,6 +341,79 @@ class APIHandler:
 
                 threading.Thread(target=producer, daemon=True).start()
                 consumer()  # This stays in the main thread so it can monitor GPIO
+        
+        def stream_tts_and_play(self, text): # native wav output
+                # Request 16‑bit PCM WAV at 48 kHz
+                url = (
+                        "https://api.deepgram.com/v1/speak"
+                        "?encoding=linear16"
+                        "&container=wav"
+                        "&sample_rate=48000"
+                )
+                headers = {
+                        "Authorization": f"Token {self.DEEPGRAM_API_KEY}",
+                        "Accept": "audio/wav"
+                }
+
+                # quick‑path for very short text
+                if len(text) <= 50:
+                        self._process_and_play_single_chunk(text)
+                        return
+
+                chunks = self.split_text(text)
+                Path("audio").mkdir(exist_ok=True)
+                q = queue.Queue()
+                self.canceled = 0
+
+                # optional “thinking” intro
+                intro_choices = {
+                        1: "audio_files/thinking.wav",
+                        2: "audio_files/letssee.wav",
+                        3: "audio_files/almostthere.wav"
+                }
+                choice = random.choice([1,2,3,4,5,6])
+                if choice in intro_choices:
+                        threading.Thread(
+                        target=self.play_audio,
+                        args=(intro_choices[choice],),
+                        daemon=True
+                        ).start()
+
+                def producer():
+                        for i, chunk in enumerate(chunks):
+                                if self.canceled:
+                                        break
+
+                                wav_path = f"audio/chunk_{i}.wav"
+                                try:
+                                        # stream WAV directly from Deepgram
+                                        with self.session.post(url, headers=headers, data=chunk.encode("utf-8"), stream=True) as resp:
+                                                resp.raise_for_status()
+                                                with open(wav_path, "wb") as f:
+                                                        for audio_block in resp.iter_content(chunk_size=4096):
+                                                        if self.canceled:
+                                                                break
+                                                        f.write(audio_block)
+                                        q.put(wav_path)
+                                except requests.RequestException as e:
+                                        print(f"Chunk {i} failed: {e}")
+                                        continue
+
+                        # signal end
+                        q.put(None)
+
+                def consumer():
+                        while True:
+                                wav_path = q.get()
+                                if wav_path is None:
+                                        break
+                                self._play_chunk(wav_path)
+
+                # start fetching
+                threading.Thread(target=producer, daemon=True).start()
+                # consume (and play) on main thread so GPIO‑cancel still works
+                consumer()
+
 
         def _play_chunk(self, wav_path):
                 print(f"Playing {wav_path}...")
