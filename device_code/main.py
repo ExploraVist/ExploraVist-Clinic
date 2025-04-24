@@ -18,6 +18,37 @@ def _gpio_setup():
     GPIO.setup(27, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.setup(AMP_SD_PIN, GPIO.OUT); GPIO.output(AMP_SD_PIN, GPIO.LOW)
 
+def voltage_to_percent(voltage):
+    voltage = float(voltage)
+    if voltage >= 4.20:
+        return 100
+    elif voltage >= 4.00:
+        return int(85 + (voltage - 4.00) / 0.20 * 15)
+    elif voltage >= 3.85:
+        return int(60 + (voltage - 3.85) / 0.15 * 25)
+    elif voltage >= 3.70:
+        return int(40 + (voltage - 3.70) / 0.15 * 20)
+    elif voltage >= 3.50:
+        return int(20 + (voltage - 3.50) / 0.20 * 20)
+    elif voltage >= 3.30:
+        return int(5 + (voltage - 3.30) / 0.20 * 15)
+    elif voltage >= 3.00:
+        return int((voltage - 3.00) / 0.30 * 5)
+    else:
+        return 0
+
+def read_battery_percentage_and_speak(api):
+    try:
+        result = subprocess.run(['vcgencmd', 'measure_volts'], stdout=subprocess.PIPE)
+        raw_output = result.stdout.decode().strip()  # e.g., "volt=4.95V"
+        voltage = float(raw_output.replace("volt=", "").replace("V", ""))
+        percent = voltage_to_percent(voltage)
+        text = f"The battery is at approximately {percent} percent."
+    except Exception as e:
+        text = f"Unable to read the battery. Error: {e}"
+
+    api.play_audio_nonblocking(text)
+
 def main():
     flag = CancelFlag(); _gpio_setup(); ButtonWatcher(flag).start()
     if not SystemConfig().check_system_ready(): return
@@ -36,11 +67,23 @@ def main():
         # wait for any press --------------------------------------------------
         start=btn=None
         while btn is None:
-            if GPIO.input(22)==GPIO.LOW:
-                btn,start=2,time.time(); device.start_recording()  # begin mic capture immediately
-            elif GPIO.input(27)==GPIO.LOW:
-                btn,start=1,time.time(); device.start_recording()
+            a_down = GPIO.input(27) == GPIO.LOW
+            b_down = GPIO.input(22) == GPIO.LOW
+
+            if a_down and b_down:
+                read_battery_percentage_and_speak(api)
+                time.sleep(1.5)
+                break  # go back to top of loop
+
+            if b_down:
+                btn, start = 2, time.time(); device.start_recording()
+            elif a_down:
+                btn, start = 1, time.time(); device.start_recording()
             time.sleep(0.01)
+
+        # skip if no button selected (e.g., just voltage check)
+        if btn is None:
+            continue
         # keep recording until release
         while GPIO.input(22)==GPIO.LOW or GPIO.input(27)==GPIO.LOW:
             time.sleep(0.01)
